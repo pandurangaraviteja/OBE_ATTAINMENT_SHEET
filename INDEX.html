@@ -1,0 +1,2773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBE Attainment System — NAAC/NBA Aligned</title>
+
+<!-- External Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+<style>
+/* ===== CSS VARIABLES & RESET ===== */
+:root {
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --bg3:       #1f2937;
+  --border:    #30363d;
+  --border2:   #404854;
+  --text:      #e6edf3;
+  --text2:     #8b949e;
+  --text3:     #6e7681;
+  --amber:     #f0a500;
+  --amber2:    #ffc233;
+  --amber-dim: rgba(240,165,0,0.12);
+  --green:     #3fb950;
+  --green-dim: rgba(63,185,80,0.12);
+  --red:       #f85149;
+  --red-dim:   rgba(248,81,73,0.12);
+  --blue:      #58a6ff;
+  --blue-dim:  rgba(88,166,255,0.12);
+  --purple:    #bc8cff;
+  --radius:    6px;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-disp: 'DM Serif Display', serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ===== LAYOUT ===== */
+#app { display: flex; min-height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+#sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo h1 {
+  font-family: var(--font-disp);
+  font-size: 18px;
+  color: var(--amber);
+  line-height: 1.2;
+}
+
+.sidebar-logo p {
+  font-size: 10px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+}
+
+.sidebar-nav { padding: 12px 8px; flex: 1; }
+
+.nav-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  padding: 8px 8px 4px;
+  font-family: var(--font-mono);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+  user-select: none;
+}
+
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+
+.nav-item.active {
+  background: var(--amber-dim);
+  color: var(--amber);
+  border-color: rgba(240,165,0,0.25);
+}
+
+.nav-item .nav-icon { width: 16px; text-align: center; font-size: 14px; }
+
+.nav-badge {
+  margin-left: auto;
+  background: var(--green);
+  color: #000;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+.nav-badge.pending { background: var(--border2); color: var(--text3); }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text3);
+  font-family: var(--font-mono);
+}
+
+/* ===== MAIN CONTENT ===== */
+#main {
+  flex: 1;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TOP BAR ===== */
+.topbar {
+  height: 52px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.topbar-title span { color: var(--amber); }
+
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary {
+  background: var(--amber);
+  color: #000;
+  border-color: var(--amber);
+}
+.btn-primary:hover { background: var(--amber2); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text2);
+  border-color: var(--border);
+}
+.btn-secondary:hover { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--amber);
+  border-color: rgba(240,165,0,0.3);
+}
+.btn-ghost:hover { background: var(--amber-dim); }
+
+.btn-danger {
+  background: transparent;
+  color: var(--red);
+  border-color: rgba(248,81,73,0.3);
+}
+.btn-danger:hover { background: var(--red-dim); }
+
+.btn-green {
+  background: var(--green);
+  color: #000;
+}
+.btn-green:hover { filter: brightness(1.1); }
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== SECTIONS ===== */
+.section { display: none; padding: 24px; max-width: 1200px; }
+.section.active { display: block; }
+
+.section-header { margin-bottom: 24px; }
+
+.section-header h2 {
+  font-family: var(--font-disp);
+  font-size: 26px;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.section-header p {
+  color: var(--text2);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--amber);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group { margin-bottom: 14px; }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text3);
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px var(--amber-dim);
+}
+
+.form-select option { background: var(--bg2); }
+
+.form-textarea { resize: vertical; min-height: 60px; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+/* ===== TABLES ===== */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+thead th {
+  background: var(--bg3);
+  color: var(--text2);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+tbody td {
+  padding: 9px 12px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.td-mono { font-family: var(--font-mono); }
+
+/* ===== MATRIX TABLE (CO-PO) ===== */
+.matrix-table th:first-child, .matrix-table td:first-child {
+  background: var(--bg3);
+  font-weight: 600;
+  color: var(--amber);
+  border-right: 1px solid var(--border);
+}
+
+.matrix-input {
+  width: 48px;
+  padding: 4px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+  outline: none;
+}
+
+.matrix-input:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px var(--amber-dim);
+}
+
+/* ===== ATTAINMENT LEVEL BADGES ===== */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+
+.level-3 { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.4); }
+.level-2 { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(88,166,255,0.4); }
+.level-1 { background: rgba(240,165,0,0.15); color: var(--amber); border: 1px solid rgba(240,165,0,0.3); }
+.level-0 { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar-wrap {
+  background: var(--bg3);
+  border-radius: 4px;
+  height: 8px;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+/* ===== STAT CARDS ===== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  font-family: var(--font-mono);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-family: var(--font-disp);
+  color: var(--amber);
+  line-height: 1;
+}
+
+.stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ===== UPLOAD ZONE ===== */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--amber);
+  background: var(--amber-dim);
+}
+
+.upload-icon { font-size: 36px; margin-bottom: 12px; }
+
+.upload-zone p { color: var(--text2); font-size: 13px; }
+.upload-zone strong { color: var(--amber); }
+
+/* ===== ALERTS ===== */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-success { background: var(--green-dim); border: 1px solid rgba(63,185,80,0.3); color: var(--green); }
+.alert-error { background: var(--red-dim); border: 1px solid rgba(248,81,73,0.3); color: var(--red); }
+.alert-info { background: var(--blue-dim); border: 1px solid rgba(88,166,255,0.3); color: var(--blue); }
+.alert-warn { background: var(--amber-dim); border: 1px solid rgba(240,165,0,0.3); color: var(--amber); }
+
+/* ===== CHIP ===== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chip-internal { background: rgba(188,140,255,0.15); color: var(--purple); }
+.chip-mid { background: var(--blue-dim); color: var(--blue); }
+.chip-end { background: var(--amber-dim); color: var(--amber); }
+
+/* ===== TABS ===== */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+
+.tab {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+/* ===== CHART CONTAINER ===== */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.chart-card h3 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text2);
+  margin-bottom: 16px;
+}
+
+/* ===== INTERMEDIATE CALC PANEL ===== */
+.calc-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.calc-panel summary {
+  cursor: pointer;
+  color: var(--text2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.calc-panel summary:hover { color: var(--text); }
+
+.calc-panel pre {
+  color: var(--text3);
+  white-space: pre-wrap;
+  margin-top: 12px;
+  line-height: 1.8;
+}
+
+.calc-panel span.val { color: var(--amber); }
+.calc-panel span.co  { color: var(--blue); }
+.calc-panel span.po  { color: var(--green); }
+
+/* ===== TAG ===== */
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text2);
+  margin: 1px;
+}
+
+/* ===== DIVIDER ===== */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* ===== TOOLTIP ===== */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip-tip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  z-index: 200;
+}
+.tooltip-wrap:hover .tooltip-tip { display: block; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  #sidebar { display: none; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.section.active { animation: fadeIn 0.2s ease; }
+
+/* ===== STEP INDICATOR ===== */
+.steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step.done .step-num { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.step.active .step-num { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+
+.step-label { font-size: 11px; color: var(--text3); }
+.step.active .step-label { color: var(--amber); }
+.step.done .step-label { color: var(--green); }
+
+.step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin: 0 4px;
+}
+/* ===== OBE CHARTS SECTION ===== */
+.obe-divider {
+  display:flex; align-items:center; gap:12px;
+  margin:32px 0 16px; font-family:var(--font-mono);
+  font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--text3);
+}
+.obe-divider::before,.obe-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.obe-divider span {
+  padding:4px 14px; background:var(--bg2);
+  border:1px solid var(--border); border-radius:20px; color:var(--amber);
+}
+.chart-panel {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:8px; padding:22px; margin-bottom:16px; position:relative; overflow:hidden;
+}
+.chart-panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+}
+.chart-panel.cdll::before { background:linear-gradient(90deg,#bc8cff,#58a6ff); }
+.chart-panel.cdal::before { background:linear-gradient(90deg,#58a6ff,#3fb950); }
+.chart-panel.coal::before { background:linear-gradient(90deg,#f0a500,#f85149); }
+.chart-panel.poal::before { background:linear-gradient(90deg,#3fb950,#f0a500); }
+.chart-panel-hdr { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px; }
+.chart-panel-hdr h3 { font-family:var(--font-disp); font-size:19px; color:var(--text); }
+.chart-panel-sub { font-size:11px; color:var(--text3); font-family:var(--font-mono); margin-bottom:16px; }
+.chart-tag {
+  display:inline-block; padding:2px 10px; margin-bottom:10px;
+  background:var(--bg3); border:1px solid var(--border);
+  border-radius:12px; font-size:10px; font-family:var(--font-mono); color:var(--text2);
+}
+.dl-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 11px; border-radius:5px; font-size:10px; font-weight:700;
+  font-family:var(--font-mono); cursor:pointer; border:1px solid var(--border);
+  background:var(--bg3); color:var(--text2); text-transform:uppercase;
+  letter-spacing:.5px; transition:all .15s; flex-shrink:0;
+}
+.dl-btn:hover { background:var(--amber-dim); border-color:var(--amber); color:var(--amber); }
+.chart-2col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+@media(max-width:900px){.chart-2col{grid-template-columns:1fr;}}
+.chart-wrap { position:relative; }
+.formula-box {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:6px; padding:14px 16px; margin-top:14px;
+  font-family:var(--font-mono); font-size:12px; line-height:2;
+}
+.formula-box .ft { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text3); margin-bottom:6px; }
+.formula-box .feq { color:var(--amber); font-weight:600; }
+.formula-box .fvar { color:var(--blue); }
+.formula-box .fdesc { color:var(--text3); font-size:10px; }
+.gauge-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:18px; }
+.gauge-item { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px 10px; text-align:center; }
+.gauge-item .g-co { font-family:var(--font-mono); font-size:10px; color:var(--text3); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+.gauge-ring { position:relative; width:76px; height:76px; margin:0 auto 8px; }
+.gauge-ring svg { transform:rotate(-90deg); }
+.gauge-ring .g-val { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:var(--font-disp); font-size:16px; font-weight:700; }
+.gauge-item .g-level { font-family:var(--font-mono); font-size:10px; font-weight:700; text-transform:uppercase; }
+.bloom-strip { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.bloom-pill { padding:4px 10px; border-radius:20px; font-size:10px; font-family:var(--font-mono); font-weight:600; text-transform:uppercase; border:1px solid transparent; }
+.level-legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.ll-item { display:flex; align-items:center; gap:6px; padding:3px 10px; border-radius:20px; font-size:10px; font-family:var(--font-mono); font-weight:700; }
+.insight-box { background:var(--bg3); border:1px solid var(--border2); border-radius:6px; padding:16px 18px; margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+@media(max-width:700px){.insight-box{grid-template-columns:1fr;}}
+.ins-label { font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.dl-all-strip { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:14px 18px; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; margin-bottom:20px; }
+.dl-all-strip p { font-size:12px; color:var(--text2); margin-top:2px; }
+/* NAAC formula reference */
+.naac-ref { background:var(--bg); border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:20px; }
+.naac-ref-hdr { background:var(--bg3); padding:12px 18px; font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--amber); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+.naac-ref-body { padding:18px; display:none; }
+.naac-ref-body.open { display:block; }
+.formula-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:800px){.formula-grid{grid-template-columns:1fr;}}
+.fc { background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:14px 16px; }
+.fc h4 { font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--amber); margin-bottom:10px; }
+.fc .eq { font-family:var(--font-mono); font-size:12px; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:8px 12px; margin-bottom:8px; line-height:1.9; }
+.fc .eq .hi { color:var(--amber); } .fc .eq .bl { color:var(--blue); } .fc .eq .gr { color:var(--green); }
+.fc p { font-size:11px; color:var(--text3); line-height:1.6; }
+</style>
+<body>
+
+<div id="app">
+
+<!-- ===== SIDEBAR ===== -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>OBE Attainment</h1>
+    <p>NAAC / NBA Aligned</p>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Setup</div>
+    <div class="nav-item active" data-section="s-setup" onclick="nav(this)">
+      <span class="nav-icon">📋</span> Course Setup
+      <span class="nav-badge pending" id="badge-setup">—</span>
+    </div>
+    <div class="nav-item" data-section="s-copo" onclick="nav(this)">
+      <span class="nav-icon">🔗</span> CO–PO Mapping
+      <span class="nav-badge pending" id="badge-copo">—</span>
+    </div>
+    <div class="nav-item" data-section="s-questions" onclick="nav(this)">
+      <span class="nav-icon">❓</span> Questions
+      <span class="nav-badge pending" id="badge-q">—</span>
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px">Data</div>
+    <div class="nav-item" data-section="s-upload" onclick="nav(this)">
+      <span class="nav-icon">📂</span> Upload Marks
+      <span class="nav-badge pending" id="badge-upload">—</span>
+    </div>
+    <div class="nav-item" data-section="s-weights" onclick="nav(this)">
+      <span class="nav-icon">⚖️</span> Weights
+      <span class="nav-badge pending" id="badge-weights">—</span>
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px">Results</div>
+    <div class="nav-item" data-section="s-results" onclick="nav(this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" data-section="s-charts" onclick="nav(this)">
+      <span class="nav-icon">📈</span> OBE Charts
+    </div>
+    <div class="nav-item" data-section="s-export" onclick="nav(this)">
+      <span class="nav-icon">⬇️</span> Export
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    v2.0 · OBE Engine · 2025
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<div id="main">
+  <div class="topbar">
+    <span class="topbar-title">OBE · <span id="topbar-section">Course Setup</span></span>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary" onclick="resetAll()">↺ Reset</button>
+      <button class="btn btn-primary" onclick="computeAll()" id="btn-compute">⚙ Compute</button>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 1: COURSE SETUP -->
+  <!-- ======================================================= -->
+  <div class="section active" id="s-setup">
+    <div class="section-header">
+      <h2>Course Setup</h2>
+      <p>Define course details, Course Outcomes (COs), and Programme Outcomes (POs).</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Course Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Course Name</label>
+          <input class="form-input" id="course-name" placeholder="e.g. Data Structures & Algorithms">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Course Code</label>
+          <input class="form-input" id="course-code" placeholder="e.g. CS301">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input class="form-input" id="dept" placeholder="e.g. Computer Science">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Academic Year</label>
+          <input class="form-input" id="acad-year" placeholder="e.g. 2024-25">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Course Outcomes (COs)</div>
+      <div id="cos-list"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-ghost" onclick="addCO()">+ Add CO</button>
+        <button class="btn btn-secondary" onclick="removeCO()">− Remove Last</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Programme Outcomes (POs)</div>
+      <div class="alert alert-info">💡 Standard NBA POs (PO1–PO12 + PSO1–PSO2) are pre-loaded. Customize as needed.</div>
+      <div id="pos-list"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-ghost" onclick="addPO()">+ Add PO</button>
+        <button class="btn btn-secondary" onclick="removePO()">− Remove Last</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;">
+      <button class="btn btn-primary" onclick="saveSetup()">Save & Continue →</button>
+    </div>
+    <div id="setup-msg" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 2: CO-PO MAPPING -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-copo">
+    <div class="section-header">
+      <h2>CO–PO Mapping Matrix</h2>
+      <p>Enter mapping strength: 0 = none, 1 = low, 2 = medium, 3 = high.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Mapping Matrix</div>
+      <div class="alert alert-warn">⚠ Values must be 0, 1, 2, or 3. Empty = 0.</div>
+      <div class="table-wrap" id="copo-matrix-wrap">
+        <div style="color:var(--text3); padding:20px; font-family:var(--font-mono); font-size:12px;">
+          Please complete Course Setup first.
+        </div>
+      </div>
+      <div style="margin-top:14px; display:flex; gap:8px;">
+        <button class="btn btn-ghost" onclick="fillMatrix(1)">Fill All → 1</button>
+        <button class="btn btn-secondary" onclick="fillMatrix(0)">Clear All</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;">
+      <button class="btn btn-primary" onclick="saveCOPO()">Save & Continue →</button>
+    </div>
+    <div id="copo-msg" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 3: QUESTIONS -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-questions">
+    <div class="section-header">
+      <h2>Question Configuration</h2>
+      <p>Define each question with its exam type, maximum marks, and mapped CO.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add Questions</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Question ID</label>
+          <input class="form-input" id="q-id" placeholder="e.g. Q1a">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Exam Type</label>
+          <select class="form-select" id="q-type">
+            <option value="Internal">Internal</option>
+            <option value="Mid">Mid-Sem</option>
+            <option value="End">End-Sem</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Marks</label>
+          <input class="form-input" id="q-max" type="number" min="1" placeholder="e.g. 10">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Mapped CO</label>
+          <select class="form-select" id="q-co"></select>
+        </div>
+        <div class="form-group" style="display:flex; align-items:flex-end;">
+          <button class="btn btn-primary" style="width:100%;" onclick="addQuestion()">+ Add Question</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Question List</div>
+      <div class="table-wrap">
+        <table id="q-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Question ID</th>
+              <th>Exam Type</th>
+              <th>Max Marks</th>
+              <th>Mapped CO</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="q-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="text-align:right;">
+      <button class="btn btn-primary" onclick="saveQuestions()">Save & Continue →</button>
+    </div>
+    <div id="q-msg" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 4: UPLOAD MARKS -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-upload">
+    <div class="section-header">
+      <h2>Upload Student Marks</h2>
+      <p>Upload an Excel file with student marks. Column headers must match Question IDs defined above.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Excel Format</div>
+      <div class="alert alert-info">
+        📌 First column = <strong>Student Name</strong>. Subsequent columns = Question IDs (must match exactly). Missing/absent = leave blank.
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary" onclick="downloadTemplate()">⬇ Download Template</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Upload Marks File</div>
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+           ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag-over')">
+        <div class="upload-icon">📊</div>
+        <p>Drag & drop your Excel file here or <strong>click to browse</strong></p>
+        <p style="margin-top:6px; font-size:11px; color:var(--text3);">Accepts .xlsx, .xls, .csv</p>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+      <div id="upload-msg" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card" id="preview-card" style="display:none;">
+      <div class="card-title">Data Preview</div>
+      <div id="preview-stats" style="margin-bottom:12px;"></div>
+      <div class="table-wrap" style="max-height:300px; overflow-y:auto;">
+        <table id="preview-table">
+          <thead><tr id="preview-head"></tr></thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="confirmUpload()">✓ Confirm & Use This Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 5: WEIGHTS -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-weights">
+    <div class="section-header">
+      <h2>Weight Configuration</h2>
+      <p>Define contribution weights for each exam component. Total must equal 100%.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Exam Weights</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Internal Weight (%)</label>
+          <input class="form-input" id="w-internal" type="number" min="0" max="100" value="20">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mid-Sem Weight (%)</label>
+          <input class="form-input" id="w-mid" type="number" min="0" max="100" value="30">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End-Sem Weight (%)</label>
+          <input class="form-input" id="w-end" type="number" min="0" max="100" value="50">
+        </div>
+      </div>
+      <div id="weight-total-msg" style="margin-top:8px;"></div>
+
+      <div class="divider"></div>
+
+      <div class="card-title">Attainment Level Thresholds</div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Level 3 (≥ %)</label>
+          <input class="form-input" id="thresh-3" type="number" value="70">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Level 2 (≥ %)</label>
+          <input class="form-input" id="thresh-2" type="number" value="60">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Level 1 (≥ %)</label>
+          <input class="form-input" id="thresh-1" type="number" value="50">
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="saveWeights()">Save Weights</button>
+      </div>
+      <div id="weights-msg" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 6: RESULTS DASHBOARD -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-results">
+    <div class="section-header">
+      <h2>Results Dashboard</h2>
+      <p>CO and PO attainment analysis based on uploaded marks and configurations.</p>
+    </div>
+
+    <div id="results-placeholder" class="alert alert-warn">
+      ⚠ No results yet. Complete all setup steps and click <strong>⚙ Compute</strong>.
+    </div>
+
+    <div id="results-content" style="display:none;">
+
+      <!-- Summary Stats -->
+      <div class="stat-grid" id="summary-stats"></div>
+
+      <!-- CO Attainment -->
+      <div class="card">
+        <div class="card-title">CO Attainment</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>CO</th>
+                <th>Description</th>
+                <th>Internal Score</th>
+                <th>Mid-Sem Score</th>
+                <th>End-Sem Score</th>
+                <th>Final Score</th>
+                <th>Percentage</th>
+                <th>Progress</th>
+                <th>Level</th>
+              </tr>
+            </thead>
+            <tbody id="co-results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PO Attainment -->
+      <div class="card">
+        <div class="card-title">PO Attainment</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>PO</th>
+                <th>Description</th>
+                <th>Weighted Score</th>
+                <th>Percentage</th>
+                <th>Progress</th>
+                <th>Mapped COs</th>
+              </tr>
+            </thead>
+            <tbody id="po-results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>CO Attainment (Class Average)</h3>
+          <canvas id="co-chart" height="220"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>PO Attainment</h3>
+          <canvas id="po-chart" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Intermediate Calculations -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Intermediate Calculations (Transparency)</div>
+        <div id="intermediate-calcs"></div>
+      </div>
+
+      <!-- Student-level CO table -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Student-wise CO Scores</div>
+        <div class="table-wrap" style="max-height:340px; overflow-y:auto;">
+          <table id="student-co-table">
+            <thead><tr id="student-co-head"></tr></thead>
+            <tbody id="student-co-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /results-content -->
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION: OBE CHARTS (NAAC/NBA) -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-charts">
+    <div class="section-header">
+      <h2>OBE Attainment Charts</h2>
+      <p>NAAC/NBA-aligned: CDLL · CDAL · COAL · POAL — with full formula reference. Each chart downloadable as PNG.</p>
+    </div>
+
+    <div id="charts-placeholder" class="alert alert-warn">⚠ No results yet. Complete all steps and click <strong>⚙ Compute</strong> first.</div>
+
+    <div id="charts-content" style="display:none">
+
+      <!-- NAAC Formula Reference -->
+      <div class="naac-ref">
+        <div class="naac-ref-hdr" onclick="toggleRef()">
+          <span>📐</span> NAAC / NBA Attainment Formula Reference
+          <span id="ref-tog" style="margin-left:auto;font-size:16px">▼</span>
+        </div>
+        <div class="naac-ref-body" id="ref-body">
+          <div class="formula-grid">
+            <div class="fc">
+              <h4>Step 1 — Question Normalisation</h4>
+              <div class="eq"><span class="hi">N<sub>ij</sub></span> = <span class="bl">M<sub>ij</sub></span> / <span class="gr">MM<sub>j</sub></span></div>
+              <p><b style="color:var(--amber)">N<sub>ij</sub></b> = normalised score, student <em>i</em>, question <em>j</em><br><b style="color:var(--blue)">M<sub>ij</sub></b> = marks obtained (absent = 0)<br><b style="color:var(--green)">MM<sub>j</sub></b> = max marks for question <em>j</em></p>
+            </div>
+            <div class="fc">
+              <h4>Step 2 — Student CO Score (per exam type)</h4>
+              <div class="eq"><span class="hi">CO<sub>i,k,t</sub></span> = (1/n) × Σ <span class="bl">N<sub>ij</sub></span></div>
+              <p><em>n</em> = questions mapped to CO<sub>k</sub> in exam type <em>t</em>.<br>If no questions exist for a CO in type <em>t</em>, that type is excluded — its weight is redistributed.</p>
+            </div>
+            <div class="fc">
+              <h4>Step 3 — Weighted CO Score (combined)</h4>
+              <div class="eq"><span class="hi">CO<sub>i,k</sub></span> = Σ<sub>t</sub> (w<sub>t</sub> / Σw<sub>avail</sub>) × <span class="bl">CO<sub>i,k,t</sub></span></div>
+              <p>Weights redistributed among exam types that actually have questions for CO<sub>k</sub>. Prevents artificial deflation from missing exam types.</p>
+            </div>
+            <div class="fc">
+              <h4>Step 4 — Class CO Attainment (Direct)</h4>
+              <div class="eq"><span class="hi">CO<sub>class,k</sub></span> = (1/S) × Σ<sub>i=1..S</sub> <span class="bl">CO<sub>i,k</sub></span></div>
+              <p>S = total students. This is the <strong>direct attainment</strong> value reported to NAAC/NBA.</p>
+            </div>
+            <div class="fc">
+              <h4>Step 5 — CO Attainment Level (COAL)</h4>
+              <div class="eq">
+                <span class="gr">Level 3</span>: CO<sub>class</sub> ≥ <span class="hi">70%</span><br>
+                <span class="bl">Level 2</span>: CO<sub>class</sub> ≥ <span class="hi">60%</span><br>
+                <span style="color:var(--amber)">Level 1</span>: CO<sub>class</sub> ≥ <span class="hi">50%</span><br>
+                <span style="color:var(--red)">Level 0</span>: CO<sub>class</sub> &lt; <span class="hi">50%</span>
+              </div>
+              <p>Thresholds configurable. NAAC recommends 60–70% as the target band.</p>
+            </div>
+            <div class="fc">
+              <h4>Step 6 — PO Attainment (Indirect)</h4>
+              <div class="eq"><span class="hi">PO<sub>p</sub></span> = Σ<sub>k</sub>(<span class="bl">CO<sub>class,k</sub></span> × <span class="gr">W<sub>kp</sub></span>) / Σ<sub>k</sub><span class="gr">W<sub>kp</sub></span></div>
+              <p>W<sub>kp</sub> ∈ {1,2,3} = CO–PO mapping strength. Only COs with W<sub>kp</sub> &gt; 0 contribute. NBA weighted average method.</p>
+            </div>
+            <div class="fc">
+              <h4>Bloom's Taxonomy (CDLL)</h4>
+              <div class="eq">L1 Remember · L2 Understand<br>L3 Apply · L4 Analyse<br>L5 Evaluate · L6 Create</div>
+              <p>Each CO is mapped to a Bloom's level. CDLL shows the cognitive depth profile — higher L4–L6 = HOTs-aligned curriculum per NAAC criterion.</p>
+            </div>
+            <div class="fc">
+              <h4>CDAL — Cognitive Attainment by Bloom Level</h4>
+              <div class="eq"><span class="hi">CDAL<sub>b</sub></span> = avg(CO<sub>class,k</sub>) ∀k : Bloom(k)=b</div>
+              <p>Groups COs by Bloom level; computes class-avg attainment per cognitive tier. Used in NAAC SSR to show HOTs vs LOTs achievement gap.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Download All -->
+      <div class="dl-all-strip">
+        <div>
+          <strong style="color:var(--amber)">Download All Charts</strong>
+          <p>CDLL · CDAL Radar · CDAL Bloom · COAL Grouped · COAL Gauges · COAL Horizontal · Student Dist · PO Horizontal · PO Radar</p>
+        </div>
+        <button class="btn btn-green" onclick="downloadAllCharts()">⬇ All PNGs</button>
+      </div>
+
+      <!-- ① CDLL -->
+      <div class="obe-divider"><span>① Cognitive Domain Learning Level (CDLL)</span></div>
+      <div class="chart-panel cdll">
+        <div class="chart-panel-hdr">
+          <div>
+            <div class="chart-tag">NAAC SAR · NBA Criterion 3</div>
+            <h3>Cognitive Domain Learning Level</h3>
+            <div class="chart-panel-sub">CO distribution across Bloom's Taxonomy levels · Amber line = avg class attainment per cognitive level</div>
+          </div>
+          <button class="dl-btn" onclick="dlChart('cdll-canvas','CDLL_Bloom')">⬇ PNG</button>
+        </div>
+        <div class="chart-wrap" style="height:300px"><canvas id="cdll-canvas"></canvas></div>
+        <div class="bloom-strip" id="bloom-strip"></div>
+        <div class="formula-box">
+          <div class="ft">CDLL Formula</div>
+          <span class="feq">CDLL(CO<sub>k</sub>)</span> = Bloom's Level assigned to CO<sub>k</sub> &nbsp;|&nbsp;
+          <span class="fvar">L1=Remember · L2=Understand · L3=Apply · L4=Analyse · L5=Evaluate · L6=Create</span><br>
+          <span class="fdesc">Source: Bloom's Taxonomy (1956, rev. Anderson 2001). Used in NAAC criterion for curriculum design depth.</span>
+        </div>
+      </div>
+
+      <!-- ② CDAL -->
+      <div class="obe-divider"><span>② Cognitive Domain Attainment Level (CDAL)</span></div>
+      <div class="chart-2col">
+        <div class="chart-panel cdal" style="margin-bottom:0">
+          <div class="chart-panel-hdr">
+            <div>
+              <div class="chart-tag">CDAL — Radar</div>
+              <h3>CO Attainment Radar</h3>
+              <div class="chart-panel-sub">Spider chart — CO balance profile vs target</div>
+            </div>
+            <button class="dl-btn" onclick="dlChart('cdal-radar','CDAL_Radar')">⬇ PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:280px"><canvas id="cdal-radar"></canvas></div>
+        </div>
+        <div class="chart-panel cdal" style="margin-bottom:0">
+          <div class="chart-panel-hdr">
+            <div>
+              <div class="chart-tag">CDAL — Bloom Grouped</div>
+              <h3>Attainment by Bloom Level</h3>
+              <div class="chart-panel-sub">Avg attainment per cognitive tier — HOTs vs LOTs gap</div>
+            </div>
+            <button class="dl-btn" onclick="dlChart('cdal-bloom','CDAL_Bloom_Att')">⬇ PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:280px"><canvas id="cdal-bloom"></canvas></div>
+          <div class="formula-box" style="margin-top:12px">
+            <div class="ft">CDAL Formula</div>
+            <span class="feq">CDAL<sub>b</sub></span> = avg(<span class="fvar">CO<sub>class,k</sub></span>) ∀k : Bloom(k)=b<br>
+            <span class="fdesc">Groups COs by Bloom level; averages class attainment per cognitive tier.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ COAL -->
+      <div class="obe-divider"><span>③ Course Outcome Attainment Level (COAL)</span></div>
+      <div class="chart-panel coal">
+        <div class="chart-panel-hdr">
+          <div>
+            <div class="chart-tag">NBA Criterion 5 · Direct Attainment</div>
+            <h3>COAL — By Exam Component</h3>
+            <div class="chart-panel-sub">Internal · Mid-Sem · End-Sem · Final weighted attainment per CO with NAAC threshold lines</div>
+          </div>
+          <button class="dl-btn" onclick="dlChart('coal-grouped','COAL_Grouped')">⬇ PNG</button>
+        </div>
+        <div class="chart-wrap" style="height:320px"><canvas id="coal-grouped"></canvas></div>
+        <div class="level-legend" id="coal-legend"></div>
+        <div class="formula-box">
+          <div class="ft">COAL Formula (NBA Direct Method)</div>
+          <span class="feq">CO<sub>class,k</sub></span> = w<sub>I</sub>·<span class="fvar">CO<sub>I,k</sub></span> + w<sub>M</sub>·<span class="fvar">CO<sub>M,k</sub></span> + w<sub>E</sub>·<span class="fvar">CO<sub>E,k</sub></span>
+          &nbsp;(weights redistributed if type absent for CO)<br>
+          <span class="fdesc">Default w<sub>I</sub>/w<sub>M</sub>/w<sub>E</sub> = 20/30/50. Configurable in Weights section.</span>
+        </div>
+      </div>
+
+      <div class="chart-2col">
+        <div class="chart-panel coal" style="margin-bottom:0">
+          <div class="chart-panel-hdr">
+            <div>
+              <div class="chart-tag">COAL — Horizontal</div>
+              <h3>CO Attainment Ranked</h3>
+              <div class="chart-panel-sub">Colour-coded by level with threshold zones</div>
+            </div>
+            <button class="dl-btn" onclick="dlChart('coal-hbar','COAL_Horizontal')">⬇ PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:260px"><canvas id="coal-hbar"></canvas></div>
+        </div>
+        <div class="chart-panel coal" style="margin-bottom:0">
+          <div class="chart-panel-hdr">
+            <div>
+              <div class="chart-tag">COAL — Student Distribution</div>
+              <h3>Students per Level per CO</h3>
+              <div class="chart-panel-sub">Stacked bar — L0/L1/L2/L3 counts from actual marks</div>
+            </div>
+            <button class="dl-btn" onclick="dlChart('coal-studist','COAL_Student_Dist')">⬇ PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:260px"><canvas id="coal-studist"></canvas></div>
+        </div>
+      </div>
+
+      <!-- CO Gauges -->
+      <div class="chart-panel coal">
+        <div class="chart-panel-hdr">
+          <div>
+            <div class="chart-tag">COAL — Gauge View</div>
+            <h3>CO Attainment Gauges</h3>
+            <div class="chart-panel-sub">Ring gauge per CO — final attainment % and attainment level</div>
+          </div>
+          <button class="dl-btn" onclick="dlChart('coal-bar','COAL_Bar')">⬇ Bar PNG</button>
+        </div>
+        <div class="gauge-grid" id="co-gauges"></div>
+        <div class="chart-wrap" style="height:190px"><canvas id="coal-bar"></canvas></div>
+      </div>
+
+      <!-- ④ POAL -->
+      <div class="obe-divider"><span>④ Programme Outcome Attainment Level (POAL)</span></div>
+      <div class="chart-panel poal">
+        <div class="chart-panel-hdr">
+          <div>
+            <div class="chart-tag">NBA Criterion 5 · Indirect Attainment</div>
+            <h3>CO–PO Mapping Strength Heatmap</h3>
+            <div class="chart-panel-sub">Mapping strength 0–3 · Colour intensity = CO contribution to PO attainment</div>
+          </div>
+          <button class="dl-btn" onclick="dlHeatmap()">⬇ PNG</button>
+        </div>
+        <div style="overflow-x:auto"><canvas id="copo-heatmap"></canvas></div>
+        <div class="formula-box">
+          <div class="ft">POAL Formula (NBA Weighted Method)</div>
+          <span class="feq">PO<sub>p</sub></span> = Σ<sub>k</sub>(<span class="fvar">CO<sub>class,k</sub></span> × <span class="fvar">W<sub>kp</sub></span>) / Σ<sub>k</sub><span class="fvar">W<sub>kp</sub></span><br>
+          <span class="fdesc">W<sub>kp</sub> ∈ {1,2,3}. Only COs with W<sub>kp</sub>&gt;0 contribute. Zero-mapped POs excluded from reporting.</span>
+        </div>
+      </div>
+
+      <div class="chart-2col">
+        <div class="chart-panel poal" style="margin-bottom:0">
+          <div class="chart-panel-hdr">
+            <div>
+              <div class="chart-tag">POAL — Horizontal Bar</div>
+              <h3>PO Attainment Scores</h3>
+              <div class="chart-panel-sub">Weighted PO scores from CO–PO matrix</div>
+            </div>
+            <button class="dl-btn" onclick="dlChart('po-hbar','PO_Horizontal')">⬇ PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:300px"><canvas id="po-hbar"></canvas></div>
+        </div>
+        <div class="chart-panel poal" style="margin-bottom:0">
+          <div class="chart-panel-hdr">
+            <div>
+              <div class="chart-tag">POAL — Radar</div>
+              <h3>PO Attainment Radar</h3>
+              <div class="chart-panel-sub">PO strength profile vs target line</div>
+            </div>
+            <button class="dl-btn" onclick="dlChart('po-radar','PO_Radar')">⬇ PNG</button>
+          </div>
+          <div class="chart-wrap" style="height:300px"><canvas id="po-radar"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Insight strip -->
+      <div class="insight-box" id="insight-box" style="display:none">
+        <div>
+          <div class="ins-label" style="color:var(--amber)">CO Summary</div>
+          <p id="ins-co" style="font-size:12px;color:var(--text2);line-height:1.8"></p>
+        </div>
+        <div>
+          <div class="ins-label" style="color:var(--green)">PO Summary</div>
+          <p id="ins-po" style="font-size:12px;color:var(--text2);line-height:1.8"></p>
+        </div>
+      </div>
+
+    </div><!-- /charts-content -->
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- SECTION 7: EXPORT -->
+  <!-- ======================================================= -->
+  <div class="section" id="s-export">
+    <div class="section-header">
+      <h2>Export Report</h2>
+      <p>Download the full attainment report in Excel or CSV format.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Export Options</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);">
+          <span style="font-size:28px;">📊</span>
+          <div>
+            <div style="font-weight:600;">Full Attainment Report (Excel)</div>
+            <div style="color:var(--text3); font-size:12px; margin-top:2px;">Includes CO attainment, PO attainment, student-wise scores, CO-PO matrix.</div>
+          </div>
+          <button class="btn btn-green" style="margin-left:auto;" onclick="exportExcel()">Download XLSX</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);">
+          <span style="font-size:28px;">📄</span>
+          <div>
+            <div style="font-weight:600;">CO Attainment CSV</div>
+            <div style="color:var(--text3); font-size:12px; margin-top:2px;">Simple CSV with CO scores and levels.</div>
+          </div>
+          <button class="btn btn-secondary" style="margin-left:auto;" onclick="exportCSV('co')">Download CSV</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px; padding:16px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);">
+          <span style="font-size:28px;">📄</span>
+          <div>
+            <div style="font-weight:600;">PO Attainment CSV</div>
+            <div style="color:var(--text3); font-size:12px; margin-top:2px;">PO scores derived from CO-PO mapping.</div>
+          </div>
+          <button class="btn btn-secondary" style="margin-left:auto;" onclick="exportCSV('po')">Download CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="export-msg" style="margin-top:10px;"></div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* =============================================================================
+   OBE ATTAINMENT SYSTEM — FULL COMPUTATION ENGINE
+   NAAC/NBA Aligned | CO-PO Attainment | v2.0
+   ============================================================================= */
+
+// ===== GLOBAL STATE =====
+const STATE = {
+  cos: [],       // [{id, description}, ...]
+  pos: [],       // [{id, description}, ...]
+  copoMatrix: {}, // {CO_id: {PO_id: weight}}
+  questions: [], // [{id, type, maxMarks, co}, ...]
+  rawData: [],   // [{name, marks: {qid: value}}, ...]
+  weights: { internal: 0.20, mid: 0.30, end: 0.50 },
+  thresholds: { 3: 70, 2: 60, 1: 50 },
+  results: null, // computed results object
+  dataSaved: false,
+};
+
+// ===== CHART INSTANCES =====
+let coChart = null, poChart = null;
+
+// ===== DEFAULT POs (NBA) =====
+const DEFAULT_POS = [
+  { id: 'PO1',  description: 'Engineering Knowledge' },
+  { id: 'PO2',  description: 'Problem Analysis' },
+  { id: 'PO3',  description: 'Design/Development of Solutions' },
+  { id: 'PO4',  description: 'Conduct Investigations of Complex Problems' },
+  { id: 'PO5',  description: 'Modern Tool Usage' },
+  { id: 'PO6',  description: 'The Engineer and Society' },
+  { id: 'PO7',  description: 'Environment and Sustainability' },
+  { id: 'PO8',  description: 'Ethics' },
+  { id: 'PO9',  description: 'Individual and Team Work' },
+  { id: 'PO10', description: 'Communication' },
+  { id: 'PO11', description: 'Project Management and Finance' },
+  { id: 'PO12', description: 'Life-long Learning' },
+  { id: 'PSO1', description: 'Programme Specific Outcome 1' },
+  { id: 'PSO2', description: 'Programme Specific Outcome 2' },
+];
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  // Seed default data
+  STATE.cos = [
+    { id: 'CO1', description: 'Apply fundamental concepts to solve engineering problems.' },
+    { id: 'CO2', description: 'Analyze and design efficient algorithms.' },
+    { id: 'CO3', description: 'Implement and test software solutions.' },
+    { id: 'CO4', description: 'Evaluate performance and suggest improvements.' },
+  ];
+  STATE.pos = JSON.parse(JSON.stringify(DEFAULT_POS));
+  renderCOs(); renderPOs();
+  initCOPOMatrix();
+  renderCOPOMatrix();
+  updateQCODropdown();
+});
+
+// ===== NAVIGATION =====
+function nav(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  const sid = el.dataset.section;
+  document.getElementById(sid).classList.add('active');
+  document.querySelector('.topbar-title span#topbar-section').textContent = el.textContent.trim().replace(/[✓—\d]/g,'').trim();
+  if (sid === 's-copo') renderCOPOMatrix();
+  if (sid === 's-questions') updateQCODropdown();
+  if (sid === 's-results' && STATE.results) renderResults(STATE.results);
+  if (sid === 's-charts' && STATE.results) renderOBECharts(STATE.results);
+}
+
+// ===== ==================== =====
+// ===== SECTION 1: SETUP     =====
+// ===== ==================== =====
+
+function renderCOs() {
+  const list = document.getElementById('cos-list');
+  list.innerHTML = '';
+  STATE.cos.forEach((co, i) => {
+    const row = document.createElement('div');
+    row.className = 'form-row';
+    row.style.marginBottom = '8px';
+    row.innerHTML = `
+      <div class="form-group" style="flex:0 0 100px; min-width:80px;">
+        <label class="form-label">CO ID</label>
+        <input class="form-input" value="${co.id}" onchange="STATE.cos[${i}].id=this.value; syncAll();">
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Description</label>
+        <input class="form-input" value="${co.description}" onchange="STATE.cos[${i}].description=this.value;">
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addCO() {
+  const n = STATE.cos.length + 1;
+  STATE.cos.push({ id: `CO${n}`, description: `Course Outcome ${n}` });
+  renderCOs(); initCOPOMatrix(); renderCOPOMatrix(); updateQCODropdown();
+}
+
+function removeCO() {
+  if (STATE.cos.length <= 1) return;
+  STATE.cos.pop();
+  renderCOs(); initCOPOMatrix(); renderCOPOMatrix(); updateQCODropdown();
+}
+
+function renderPOs() {
+  const list = document.getElementById('pos-list');
+  list.innerHTML = '';
+  STATE.pos.forEach((po, i) => {
+    const row = document.createElement('div');
+    row.className = 'form-row';
+    row.style.marginBottom = '8px';
+    row.innerHTML = `
+      <div class="form-group" style="flex:0 0 100px; min-width:80px;">
+        <label class="form-label">PO ID</label>
+        <input class="form-input" value="${po.id}" onchange="STATE.pos[${i}].id=this.value; syncAll();">
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label class="form-label">Description</label>
+        <input class="form-input" value="${po.description}" onchange="STATE.pos[${i}].description=this.value;">
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addPO() {
+  const n = STATE.pos.length + 1;
+  STATE.pos.push({ id: `PSO${n}`, description: `Programme Specific Outcome ${n}` });
+  renderPOs(); initCOPOMatrix(); renderCOPOMatrix();
+}
+
+function removePO() {
+  if (STATE.pos.length <= 1) return;
+  STATE.pos.pop();
+  renderPOs(); initCOPOMatrix(); renderCOPOMatrix();
+}
+
+function syncAll() {
+  initCOPOMatrix(); renderCOPOMatrix(); updateQCODropdown();
+}
+
+function saveSetup() {
+  // Validate
+  if (!document.getElementById('course-name').value.trim()) {
+    showMsg('setup-msg', 'error', 'Please enter course name.');
+    return;
+  }
+  for (const co of STATE.cos) {
+    if (!co.id.trim()) { showMsg('setup-msg', 'error', 'All CO IDs must be filled.'); return; }
+  }
+  for (const po of STATE.pos) {
+    if (!po.id.trim()) { showMsg('setup-msg', 'error', 'All PO IDs must be filled.'); return; }
+  }
+  updateBadge('setup', STATE.cos.length + ' COs, ' + STATE.pos.length + ' POs');
+  showMsg('setup-msg', 'success', '✓ Setup saved. Navigate to CO–PO Mapping.');
+  initCOPOMatrix();
+  renderCOPOMatrix();
+}
+
+// ===== ========================= =====
+// ===== SECTION 2: CO-PO MATRIX  =====
+// ===== ========================= =====
+
+function initCOPOMatrix() {
+  // Preserve existing values
+  const old = STATE.copoMatrix;
+  STATE.copoMatrix = {};
+  for (const co of STATE.cos) {
+    STATE.copoMatrix[co.id] = {};
+    for (const po of STATE.pos) {
+      // carry over existing value if available
+      const prev = (old[co.id] && old[co.id][po.id] !== undefined) ? old[co.id][po.id] : 0;
+      STATE.copoMatrix[co.id][po.id] = prev;
+    }
+  }
+}
+
+function renderCOPOMatrix() {
+  const wrap = document.getElementById('copo-matrix-wrap');
+  if (!STATE.cos.length || !STATE.pos.length) {
+    wrap.innerHTML = '<div style="color:var(--text3); padding:20px; font-family:var(--font-mono); font-size:12px;">Please complete Course Setup first.</div>';
+    return;
+  }
+  let html = '<table class="matrix-table">';
+  // Header row
+  html += '<thead><tr><th>CO \\ PO</th>';
+  for (const po of STATE.pos) html += `<th>${po.id}</th>`;
+  html += '</tr></thead><tbody>';
+  // Data rows
+  for (const co of STATE.cos) {
+    html += `<tr><td>${co.id}</td>`;
+    for (const po of STATE.pos) {
+      const val = STATE.copoMatrix[co.id]?.[po.id] ?? 0;
+      html += `<td><input class="matrix-input" type="number" min="0" max="3"
+        value="${val}"
+        data-co="${co.id}" data-po="${po.id}"
+        onchange="setMatrix(this)"></td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function setMatrix(el) {
+  const v = parseInt(el.value) || 0;
+  const clamped = Math.max(0, Math.min(3, v));
+  el.value = clamped;
+  STATE.copoMatrix[el.dataset.co][el.dataset.po] = clamped;
+}
+
+function fillMatrix(val) {
+  for (const co of STATE.cos)
+    for (const po of STATE.pos)
+      STATE.copoMatrix[co.id][po.id] = val;
+  renderCOPOMatrix();
+}
+
+function saveCOPO() {
+  // Count non-zero mappings
+  let count = 0;
+  for (const co of STATE.cos)
+    for (const po of STATE.pos)
+      if (STATE.copoMatrix[co.id]?.[po.id] > 0) count++;
+  updateBadge('copo', count + ' mappings');
+  showMsg('copo-msg', 'success', '✓ CO–PO mapping saved.');
+}
+
+// ===== ========================== =====
+// ===== SECTION 3: QUESTIONS       =====
+// ===== ========================== =====
+
+function updateQCODropdown() {
+  const sel = document.getElementById('q-co');
+  sel.innerHTML = '';
+  for (const co of STATE.cos)
+    sel.innerHTML += `<option value="${co.id}">${co.id} — ${co.description.substring(0,40)}</option>`;
+}
+
+function addQuestion() {
+  const id = document.getElementById('q-id').value.trim();
+  const type = document.getElementById('q-type').value;
+  const max = parseFloat(document.getElementById('q-max').value);
+  const co = document.getElementById('q-co').value;
+
+  if (!id) { alert('Question ID is required.'); return; }
+  if (isNaN(max) || max <= 0) { alert('Max marks must be positive.'); return; }
+  if (!co) { alert('Please select a CO.'); return; }
+  // Check duplicate
+  if (STATE.questions.find(q => q.id === id)) { alert(`Question ID "${id}" already exists.`); return; }
+
+  STATE.questions.push({ id, type, maxMarks: max, co });
+  renderQTable();
+  document.getElementById('q-id').value = '';
+  document.getElementById('q-max').value = '';
+}
+
+function renderQTable() {
+  const tbody = document.getElementById('q-tbody');
+  tbody.innerHTML = '';
+  STATE.questions.forEach((q, i) => {
+    const typeClass = q.type === 'Internal' ? 'chip-internal' : q.type === 'Mid' ? 'chip-mid' : 'chip-end';
+    tbody.innerHTML += `<tr>
+      <td>${i+1}</td>
+      <td><strong>${q.id}</strong></td>
+      <td><span class="chip ${typeClass}">${q.type}</span></td>
+      <td>${q.maxMarks}</td>
+      <td><span class="tag">${q.co}</span></td>
+      <td><button class="btn btn-danger" style="padding:3px 8px; font-size:10px;" onclick="removeQ(${i})">✕</button></td>
+    </tr>`;
+  });
+}
+
+function removeQ(i) {
+  STATE.questions.splice(i, 1);
+  renderQTable();
+}
+
+function saveQuestions() {
+  if (!STATE.questions.length) { showMsg('q-msg', 'error', 'Please add at least one question.'); return; }
+  updateBadge('q', STATE.questions.length + ' questions');
+  showMsg('q-msg', 'success', '✓ Questions saved. Proceed to Upload Marks.');
+}
+
+// ===== ========================== =====
+// ===== SECTION 4: UPLOAD MARKS    =====
+// ===== ========================== =====
+
+let parsedRaw = [];
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  showMsg('upload-msg', 'info', `Reading: ${file.name}...`);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!rows.length) { showMsg('upload-msg', 'error', 'No data found in file.'); return; }
+
+      // Parse: first column = student name, rest = question marks
+      parsedRaw = rows.map(row => {
+        const keys = Object.keys(row);
+        const nameKey = keys[0];
+        const name = String(row[nameKey]).trim();
+        const marks = {};
+        for (let i = 1; i < keys.length; i++) {
+          const v = row[keys[i]];
+          marks[keys[i].trim()] = (v === '' || v === null || v === undefined) ? null : parseFloat(v);
+        }
+        return { name, marks };
+      }).filter(r => r.name && r.name !== 'undefined');
+
+      showPreview(parsedRaw, rows);
+      showMsg('upload-msg', 'success', `✓ Parsed ${parsedRaw.length} students from ${file.name}`);
+    } catch (err) {
+      showMsg('upload-msg', 'error', 'Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showPreview(data, rawRows) {
+  const card = document.getElementById('preview-card');
+  card.style.display = 'block';
+
+  const qids = data.length > 0 ? Object.keys(data[0].marks) : [];
+
+  // Validate question IDs
+  const definedQIds = STATE.questions.map(q => q.id);
+  const missing = qids.filter(id => !definedQIds.includes(id));
+  const extra = definedQIds.filter(id => !qids.includes(id));
+
+  let statsHtml = `<div class="form-row-3">
+    <div class="stat-card"><div class="stat-label">Students</div><div class="stat-value">${data.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Columns</div><div class="stat-value">${qids.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Matched Qs</div><div class="stat-value">${qids.filter(id => definedQIds.includes(id)).length}</div></div>
+  </div>`;
+
+  if (missing.length) statsHtml += `<div class="alert alert-warn" style="margin-top:8px;">⚠ Columns in file not in question list: ${missing.join(', ')}</div>`;
+  if (extra.length)   statsHtml += `<div class="alert alert-info" style="margin-top:8px;">ℹ Questions defined but not in file: ${extra.join(', ')} (will be treated as absent)</div>`;
+
+  document.getElementById('preview-stats').innerHTML = statsHtml;
+
+  // Table
+  const head = document.getElementById('preview-head');
+  const body = document.getElementById('preview-body');
+  head.innerHTML = '<th>Student Name</th>' + qids.map(q => `<th>${q}</th>`).join('');
+  body.innerHTML = data.slice(0, 15).map(s =>
+    `<tr><td><strong>${s.name}</strong></td>${qids.map(q => {
+      const v = s.marks[q];
+      return `<td style="color:${v===null?'var(--text3)':'var(--text)'}">${v===null?'—':v}</td>`;
+    }).join('')}</tr>`
+  ).join('') + (data.length > 15 ? `<tr><td colspan="${qids.length+1}" style="color:var(--text3);text-align:center;">... and ${data.length-15} more students</td></tr>` : '');
+}
+
+function confirmUpload() {
+  STATE.rawData = parsedRaw;
+  STATE.dataSaved = true;
+  updateBadge('upload', STATE.rawData.length + ' students');
+  showMsg('upload-msg', 'success', '✓ Data confirmed. You can now Compute.');
+}
+
+// ===== ========================== =====
+// ===== SECTION 5: WEIGHTS         =====
+// ===== ========================== =====
+
+function saveWeights() {
+  const wi = parseFloat(document.getElementById('w-internal').value) || 0;
+  const wm = parseFloat(document.getElementById('w-mid').value) || 0;
+  const we = parseFloat(document.getElementById('w-end').value) || 0;
+  const total = wi + wm + we;
+
+  if (Math.abs(total - 100) > 0.01) {
+    showMsg('weights-msg', 'error', `Weights sum to ${total}%, must be 100%.`);
+    document.getElementById('weight-total-msg').innerHTML = `<span style="color:var(--red); font-family:var(--font-mono); font-size:12px;">Sum: ${total}% ≠ 100%</span>`;
+    return;
+  }
+
+  STATE.weights = { internal: wi/100, mid: wm/100, end: we/100 };
+  STATE.thresholds = {
+    3: parseFloat(document.getElementById('thresh-3').value) || 70,
+    2: parseFloat(document.getElementById('thresh-2').value) || 60,
+    1: parseFloat(document.getElementById('thresh-1').value) || 50,
+  };
+  document.getElementById('weight-total-msg').innerHTML = `<span style="color:var(--green); font-family:var(--font-mono); font-size:12px;">Sum: 100% ✓</span>`;
+  updateBadge('weights', `${wi}/${wm}/${we}`);
+  showMsg('weights-msg', 'success', '✓ Weights saved.');
+}
+
+// ===== ================================================ =====
+// ===== CORE COMPUTATION ENGINE                           =====
+// ===== ================================================ =====
+
+/**
+ * MAIN COMPUTATION FUNCTION
+ * Implements the full OBE attainment pipeline:
+ * 1. Normalize marks per question
+ * 2. Per-student CO scores per exam type
+ * 3. Combine exam types with weights
+ * 4. Class-level CO attainment
+ * 5. Assign attainment levels
+ * 6. PO attainment via weighted CO-PO mapping
+ */
+function computeAll() {
+  // ---- VALIDATION ----
+  const errors = [];
+  if (!STATE.cos.length) errors.push('No COs defined.');
+  if (!STATE.pos.length) errors.push('No POs defined.');
+  if (!STATE.questions.length) errors.push('No questions defined.');
+  if (!STATE.rawData.length) errors.push('No marks data uploaded. Please upload and confirm marks.');
+
+  if (errors.length) {
+    alert('Cannot compute:\n• ' + errors.join('\n• '));
+    return;
+  }
+
+  // Save weights if not explicitly saved
+  const wi = parseFloat(document.getElementById('w-internal').value) || 20;
+  const wm = parseFloat(document.getElementById('w-mid').value) || 30;
+  const we = parseFloat(document.getElementById('w-end').value) || 50;
+  STATE.weights = { internal: wi/100, mid: wm/100, end: we/100 };
+  STATE.thresholds = {
+    3: parseFloat(document.getElementById('thresh-3').value) || 70,
+    2: parseFloat(document.getElementById('thresh-2').value) || 60,
+    1: parseFloat(document.getElementById('thresh-1').value) || 50,
+  };
+
+  const results = {};
+  const log = []; // intermediate calculation log
+
+  // ---- GROUP QUESTIONS BY TYPE ----
+  const qByType = { Internal: [], Mid: [], End: [] };
+  for (const q of STATE.questions) qByType[q.type].push(q);
+
+  // ---- GROUP QUESTIONS BY CO (per exam type) ----
+  // qByCOType[examType][coId] = [question, ...]
+  const qByCOType = {};
+  for (const type of ['Internal', 'Mid', 'End']) {
+    qByCOType[type] = {};
+    for (const co of STATE.cos) qByCOType[type][co.id] = [];
+    for (const q of qByType[type]) {
+      if (qByCOType[type][q.co]) qByCOType[type][q.co].push(q);
+    }
+  }
+
+  log.push('=== QUESTION GROUPING ===');
+  for (const type of ['Internal', 'Mid', 'End']) {
+    for (const co of STATE.cos) {
+      const qs = qByCOType[type][co.id];
+      if (qs.length) log.push(`  ${type} → ${co.id}: [${qs.map(q=>q.id).join(', ')}] (maxMarks: ${qs.map(q=>q.maxMarks).join(', ')})`);
+    }
+  }
+
+  // ---- STUDENT-LEVEL COMPUTATION ----
+  // studentCOScores[studentIdx][coId][type] = normalized score (0–1) or null if no questions for that CO/type
+  const studentCOScores = [];
+
+  for (const student of STATE.rawData) {
+    const coByType = {};  // coByType[coId][type] = normalizedScore
+
+    for (const co of STATE.cos) {
+      coByType[co.id] = {};
+
+      for (const type of ['Internal', 'Mid', 'End']) {
+        const questions = qByCOType[type][co.id];
+
+        if (!questions.length) {
+          // No questions of this type mapped to this CO — mark as N/A (skip in weighting)
+          coByType[co.id][type] = null;
+          continue;
+        }
+
+        // STEP 1: Normalize each question mark and average them
+        // CO_student_score = mean(obtained_i / max_i) for all questions mapped to CO
+        let total = 0;
+        let count = 0;
+        for (const q of questions) {
+          const obtained = student.marks[q.id];
+          if (obtained === null || obtained === undefined || isNaN(obtained)) {
+            // Absent: treat as 0 (can be configured)
+            total += 0;
+          } else {
+            total += obtained / q.maxMarks;
+          }
+          count++;
+        }
+        coByType[co.id][type] = count > 0 ? total / count : null;
+      }
+    }
+    studentCOScores.push({ name: student.name, coByType });
+  }
+
+  // ---- COMBINE EXAM TYPES PER STUDENT PER CO ----
+  // CO_final = w_internal * CO_internal + w_mid * CO_mid + w_end * CO_end
+  // If a type has no questions for a CO, redistribute its weight among types that DO have questions.
+
+  const studentCOFinal = []; // [{name, coScores: {coId: finalScore}}]
+
+  for (const student of studentCOScores) {
+    const coScores = {};
+    for (const co of STATE.cos) {
+      const scores = student.coByType[co.id];
+      // Collect which types have data
+      const available = [];
+      for (const [type, w] of [['Internal', STATE.weights.internal], ['Mid', STATE.weights.mid], ['End', STATE.weights.end]]) {
+        if (scores[type] !== null) available.push({ type, w, score: scores[type] });
+      }
+
+      if (!available.length) {
+        coScores[co.id] = 0;
+        continue;
+      }
+
+      // Normalize weights among available types only
+      const totalW = available.reduce((s, x) => s + x.w, 0);
+      let finalScore = 0;
+      for (const av of available) {
+        finalScore += (av.w / totalW) * av.score;
+      }
+      coScores[co.id] = finalScore;
+    }
+    studentCOFinal.push({ name: student.name, coScores });
+  }
+
+  // ---- CLASS-LEVEL CO ATTAINMENT ----
+  // CO_class = mean over all students
+  const coClassScores = {}; // {coId: {score, count}}
+  for (const co of STATE.cos) {
+    const scores = studentCOFinal.map(s => s.coScores[co.id]).filter(v => v !== null && !isNaN(v));
+    const mean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    coClassScores[co.id] = { score: mean, count: scores.length };
+  }
+
+  // ---- ATTAINMENT LEVELS ----
+  const coAttainment = {};
+  for (const co of STATE.cos) {
+    const pct = coClassScores[co.id].score * 100;
+    let level = 0;
+    if (pct >= STATE.thresholds[3]) level = 3;
+    else if (pct >= STATE.thresholds[2]) level = 2;
+    else if (pct >= STATE.thresholds[1]) level = 1;
+    coAttainment[co.id] = {
+      score: coClassScores[co.id].score,
+      percentage: pct,
+      level,
+      count: coClassScores[co.id].count,
+    };
+  }
+
+  // Also compute per-exam-type class CO scores for display
+  const coByTypeClass = {}; // {coId: {Internal, Mid, End}}
+  for (const co of STATE.cos) {
+    coByTypeClass[co.id] = {};
+    for (const type of ['Internal', 'Mid', 'End']) {
+      const vals = studentCOScores
+        .map(s => s.coByType[co.id][type])
+        .filter(v => v !== null && !isNaN(v));
+      coByTypeClass[co.id][type] = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+    }
+  }
+
+  // ---- PO ATTAINMENT ----
+  // PO_p = sum(CO_class_score * CO_PO_weight) / sum(CO_PO_weight)
+  // Weighted average of CO scores using CO-PO mapping weights
+  const poAttainment = {};
+  for (const po of STATE.pos) {
+    let weightedSum = 0;
+    let totalWeight = 0;
+    const mappedCOs = [];
+
+    for (const co of STATE.cos) {
+      const w = STATE.copoMatrix[co.id]?.[po.id] ?? 0;
+      if (w > 0) {
+        weightedSum += coAttainment[co.id].score * w;
+        totalWeight += w;
+        mappedCOs.push(`${co.id}(${w})`);
+      }
+    }
+
+    const score = totalWeight > 0 ? weightedSum / totalWeight : 0;
+    poAttainment[po.id] = {
+      score,
+      percentage: score * 100,
+      totalWeight,
+      mappedCOs,
+    };
+  }
+
+  // ---- LOG INTERMEDIATE CALCULATIONS ----
+  log.push('\n=== CLASS-LEVEL CO ATTAINMENT ===');
+  for (const co of STATE.cos) {
+    const a = coAttainment[co.id];
+    const byType = coByTypeClass[co.id];
+    log.push(`  ${co.id}:`);
+    for (const type of ['Internal', 'Mid', 'End']) {
+      const v = byType[type];
+      log.push(`    ${type}: ${v !== null ? (v*100).toFixed(2)+'%' : 'N/A (no questions)'}`);
+    }
+    log.push(`    Final (weighted): ${(a.score*100).toFixed(4)}% → Level ${a.level}`);
+  }
+  log.push('\n=== PO ATTAINMENT ===');
+  for (const po of STATE.pos) {
+    const a = poAttainment[po.id];
+    if (a.totalWeight > 0)
+      log.push(`  ${po.id}: ${(a.score*100).toFixed(4)}% (mapped: ${a.mappedCOs.join(', ')})`);
+    else
+      log.push(`  ${po.id}: N/A (no CO mapping)`);
+  }
+
+  // ---- STORE RESULTS ----
+  STATE.results = {
+    coAttainment,
+    poAttainment,
+    coByTypeClass,
+    studentCOFinal,
+    log,
+    qByCOType,
+  };
+
+  renderResults(STATE.results);
+  setTimeout(() => { if (STATE.results) renderOBECharts(STATE.results); }, 250);
+
+  // Navigate to results
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelector('[data-section="s-results"]').classList.add('active');
+  document.getElementById('s-results').classList.add('active');
+  document.querySelector('.topbar-title span#topbar-section').textContent = 'Dashboard';
+}
+
+// ===== ========================== =====
+// ===== RENDER RESULTS             =====
+// ===== ========================== =====
+
+function renderResults(r) {
+  document.getElementById('results-placeholder').style.display = 'none';
+  document.getElementById('results-content').style.display = 'block';
+
+  // ---- SUMMARY STATS ----
+  const avgCO = Object.values(r.coAttainment).reduce((s,a) => s+a.percentage, 0) / STATE.cos.length;
+  const avgPO = Object.values(r.poAttainment).filter(a=>a.totalWeight>0).reduce((s,a) => s+a.percentage, 0) / Object.values(r.poAttainment).filter(a=>a.totalWeight>0).length || 0;
+  const bestCO = STATE.cos.reduce((b,co) => r.coAttainment[co.id].percentage > r.coAttainment[b.id].percentage ? co : b, STATE.cos[0]);
+  const levelsCount = [0,1,2,3].map(l => Object.values(r.coAttainment).filter(a=>a.level===l).length);
+
+  document.getElementById('summary-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Students</div><div class="stat-value">${STATE.rawData.length}</div><div class="stat-sub">in computation</div></div>
+    <div class="stat-card"><div class="stat-label">Avg CO Attainment</div><div class="stat-value" style="color:var(--amber)">${avgCO.toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="stat-label">Avg PO Attainment</div><div class="stat-value" style="color:var(--blue)">${avgPO.toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="stat-label">Best CO</div><div class="stat-value" style="font-size:18px;">${bestCO.id}</div><div class="stat-sub">${r.coAttainment[bestCO.id].percentage.toFixed(1)}%</div></div>
+    <div class="stat-card"><div class="stat-label">Level 3 COs</div><div class="stat-value" style="color:var(--green)">${levelsCount[3]}</div><div class="stat-sub">/ ${STATE.cos.length} total</div></div>
+  `;
+
+  // ---- CO TABLE ----
+  const coTbody = document.getElementById('co-results-tbody');
+  coTbody.innerHTML = '';
+  for (const co of STATE.cos) {
+    const a = r.coAttainment[co.id];
+    const bt = r.coByTypeClass[co.id];
+    const pct = a.percentage;
+    const barColor = pct >= STATE.thresholds[3] ? 'var(--green)' : pct >= STATE.thresholds[2] ? 'var(--blue)' : pct >= STATE.thresholds[1] ? 'var(--amber)' : 'var(--red)';
+    const desc = STATE.cos.find(c=>c.id===co.id)?.description || '';
+
+    coTbody.innerHTML += `<tr>
+      <td><strong style="color:var(--amber)">${co.id}</strong></td>
+      <td style="max-width:200px; color:var(--text2); font-size:12px;">${desc}</td>
+      <td style="font-family:var(--font-mono)">${bt.Internal!==null ? (bt.Internal*100).toFixed(2)+'%' : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-family:var(--font-mono)">${bt.Mid!==null ? (bt.Mid*100).toFixed(2)+'%' : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-family:var(--font-mono)">${bt.End!==null ? (bt.End*100).toFixed(2)+'%' : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-family:var(--font-mono); font-weight:600">${a.score.toFixed(4)}</td>
+      <td style="font-family:var(--font-mono)">${pct.toFixed(2)}%</td>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px; min-width:120px;">
+          <div class="progress-bar-wrap" style="flex:1;">
+            <div class="progress-bar-fill" style="width:${pct}%; background:${barColor};"></div>
+          </div>
+          <span style="font-family:var(--font-mono); font-size:11px; color:var(--text2)">${pct.toFixed(0)}%</span>
+        </div>
+      </td>
+      <td><div class="level-badge level-${a.level}">${a.level}</div></td>
+    </tr>`;
+  }
+
+  // ---- PO TABLE ----
+  const poTbody = document.getElementById('po-results-tbody');
+  poTbody.innerHTML = '';
+  for (const po of STATE.pos) {
+    const a = r.poAttainment[po.id];
+    const pct = a.percentage;
+    const barColor = pct >= 70 ? 'var(--green)' : pct >= 60 ? 'var(--blue)' : pct >= 50 ? 'var(--amber)' : 'var(--red)';
+    const desc = STATE.pos.find(p=>p.id===po.id)?.description || '';
+
+    poTbody.innerHTML += `<tr>
+      <td><strong style="color:var(--green)">${po.id}</strong></td>
+      <td style="max-width:200px; color:var(--text2); font-size:12px;">${desc}</td>
+      <td style="font-family:var(--font-mono); font-weight:600">${a.totalWeight > 0 ? a.score.toFixed(4) : '<span style="color:var(--text3)">—</span>'}</td>
+      <td style="font-family:var(--font-mono)">${a.totalWeight > 0 ? pct.toFixed(2)+'%' : '<span style="color:var(--text3)">N/A</span>'}</td>
+      <td>
+        ${a.totalWeight > 0 ? `
+        <div style="display:flex; align-items:center; gap:8px; min-width:120px;">
+          <div class="progress-bar-wrap" style="flex:1;">
+            <div class="progress-bar-fill" style="width:${pct}%; background:${barColor};"></div>
+          </div>
+          <span style="font-family:var(--font-mono); font-size:11px; color:var(--text2)">${pct.toFixed(0)}%</span>
+        </div>` : '<span style="color:var(--text3); font-size:11px;">No mapping</span>'}
+      </td>
+      <td>${a.mappedCOs.length ? a.mappedCOs.map(c=>`<span class="tag">${c}</span>`).join('') : '<span style="color:var(--text3); font-size:11px;">—</span>'}</td>
+    </tr>`;
+  }
+
+  // ---- CHARTS ----
+  renderCharts(r);
+
+  // ---- INTERMEDIATE CALCS ----
+  const calcDiv = document.getElementById('intermediate-calcs');
+  calcDiv.innerHTML = `<details class="calc-panel">
+    <summary>Show Full Computation Log (${r.log.length} lines)</summary>
+    <pre>${r.log.map(line => {
+      return line
+        .replace(/(CO\d+|PSO\d+)/g, '<span class="co">$1</span>')
+        .replace(/(PO\d+|PSO\d+)/g, '<span class="po">$1</span>')
+        .replace(/(\d+\.\d+%)/g, '<span class="val">$1</span>');
+    }).join('\n')}</pre>
+  </details>
+  <details class="calc-panel">
+    <summary>Formula Reference</summary>
+    <pre>
+<span class="co">1. Normalized mark</span>   = obtained_marks / max_marks
+<span class="co">2. CO_student_score</span> = mean(normalized_marks) for all Qs mapped to CO
+<span class="co">3. CO_class_score</span>   = mean(CO_student_score) over all students
+<span class="co">4. CO_final</span>         = Σ(weight[type] * CO_class_score[type]) / Σ(weight[type])
+                    (only types with questions for that CO are included)
+<span class="po">5. PO_score</span>         = Σ(CO_class_score × CO_PO_weight) / Σ(CO_PO_weight)
+<span class="val">6. Attainment Level</span>  → 3: ≥${STATE.thresholds[3]}%  2: ≥${STATE.thresholds[2]}%  1: ≥${STATE.thresholds[1]}%  0: otherwise
+    </pre>
+  </details>`;
+
+  // ---- STUDENT-WISE TABLE ----
+  const head = document.getElementById('student-co-head');
+  const body = document.getElementById('student-co-body');
+  head.innerHTML = '<th>Student</th>' + STATE.cos.map(co => `<th>${co.id}</th>`).join('');
+  body.innerHTML = r.studentCOFinal.map(s => `
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      ${STATE.cos.map(co => {
+        const v = s.coScores[co.id];
+        const pct = (v*100).toFixed(1);
+        const color = v >= STATE.thresholds[3]/100 ? 'var(--green)' : v >= STATE.thresholds[2]/100 ? 'var(--blue)' : v >= STATE.thresholds[1]/100 ? 'var(--amber)' : 'var(--red)';
+        return `<td style="font-family:var(--font-mono); color:${color};">${pct}%</td>`;
+      }).join('')}
+    </tr>
+  `).join('');
+}
+
+function renderCharts(r) {
+  const coLabels = STATE.cos.map(c => c.id);
+  const coData   = STATE.cos.map(c => r.coAttainment[c.id].percentage.toFixed(2));
+  const coColors = STATE.cos.map(c => {
+    const p = r.coAttainment[c.id].percentage;
+    return p >= STATE.thresholds[3] ? '#3fb950' : p >= STATE.thresholds[2] ? '#58a6ff' : p >= STATE.thresholds[1] ? '#f0a500' : '#f85149';
+  });
+
+  const poActive = STATE.pos.filter(p => r.poAttainment[p.id].totalWeight > 0);
+  const poLabels = poActive.map(p => p.id);
+  const poData   = poActive.map(p => r.poAttainment[p.id].percentage.toFixed(2));
+  const poColors = poActive.map(p => {
+    const v = r.poAttainment[p.id].percentage;
+    return v >= 70 ? '#3fb950' : v >= 60 ? '#58a6ff' : v >= 50 ? '#f0a500' : '#f85149';
+  });
+
+  const chartOptions = (title, max=100) => ({
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleColor: '#e6edf3',
+        bodyColor: '#8b949e',
+        borderColor: '#30363d',
+        borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.parsed.y}%` }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        grid: { color: '#30363d' },
+        ticks: { color: '#8b949e', font: { family: "'IBM Plex Mono'" }, callback: v => v+'%' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: '#8b949e', font: { family: "'IBM Plex Mono'", size: 11 } }
+      }
+    }
+  });
+
+  if (coChart) coChart.destroy();
+  if (poChart) poChart.destroy();
+
+  const coCtx = document.getElementById('co-chart').getContext('2d');
+  coChart = new Chart(coCtx, {
+    type: 'bar',
+    data: {
+      labels: coLabels,
+      datasets: [{
+        data: coData,
+        backgroundColor: coColors.map(c => c + '33'),
+        borderColor: coColors,
+        borderWidth: 2,
+        borderRadius: 4,
+      }]
+    },
+    options: chartOptions('CO Attainment'),
+  });
+
+  const poCtx = document.getElementById('po-chart').getContext('2d');
+  poChart = new Chart(poCtx, {
+    type: 'bar',
+    data: {
+      labels: poLabels,
+      datasets: [{
+        data: poData,
+        backgroundColor: poColors.map(c => c + '33'),
+        borderColor: poColors,
+        borderWidth: 2,
+        borderRadius: 4,
+      }]
+    },
+    options: chartOptions('PO Attainment'),
+  });
+}
+
+// ===== ========================== =====
+// ===== EXPORT                     =====
+// ===== ========================== =====
+
+function exportExcel() {
+  if (!STATE.results) { showMsg('export-msg', 'error', 'Compute results first.'); return; }
+  const r = STATE.results;
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: CO Attainment
+  const coRows = [['CO', 'Description', 'Internal (%)', 'Mid (%)', 'End (%)', 'Final Score', 'Percentage (%)', 'Level']];
+  for (const co of STATE.cos) {
+    const a = r.coAttainment[co.id];
+    const bt = r.coByTypeClass[co.id];
+    coRows.push([
+      co.id, co.description,
+      bt.Internal !== null ? (bt.Internal*100).toFixed(2) : 'N/A',
+      bt.Mid !== null ? (bt.Mid*100).toFixed(2) : 'N/A',
+      bt.End !== null ? (bt.End*100).toFixed(2) : 'N/A',
+      a.score.toFixed(4),
+      a.percentage.toFixed(2),
+      a.level,
+    ]);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(coRows), 'CO Attainment');
+
+  // Sheet 2: PO Attainment
+  const poRows = [['PO', 'Description', 'Score', 'Percentage (%)', 'Mapped COs']];
+  for (const po of STATE.pos) {
+    const a = r.poAttainment[po.id];
+    poRows.push([po.id, po.description, a.totalWeight>0?a.score.toFixed(4):'N/A', a.totalWeight>0?a.percentage.toFixed(2):'N/A', a.mappedCOs.join(', ')]);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(poRows), 'PO Attainment');
+
+  // Sheet 3: CO-PO Matrix
+  const matHeader = ['CO \\ PO', ...STATE.pos.map(p=>p.id)];
+  const matRows = [matHeader];
+  for (const co of STATE.cos) {
+    matRows.push([co.id, ...STATE.pos.map(po => STATE.copoMatrix[co.id]?.[po.id] ?? 0)]);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(matRows), 'CO-PO Matrix');
+
+  // Sheet 4: Student-wise CO
+  const stuHeader = ['Student', ...STATE.cos.map(c=>c.id)];
+  const stuRows = [stuHeader];
+  for (const s of r.studentCOFinal)
+    stuRows.push([s.name, ...STATE.cos.map(co => (s.coScores[co.id]*100).toFixed(2))]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stuRows), 'Student CO Scores');
+
+  // Sheet 5: Questions
+  const qRows = [['Question ID', 'Exam Type', 'Max Marks', 'Mapped CO']];
+  for (const q of STATE.questions) qRows.push([q.id, q.type, q.maxMarks, q.co]);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(qRows), 'Questions');
+
+  const courseName = document.getElementById('course-name').value || 'Course';
+  XLSX.writeFile(wb, `OBE_Attainment_${courseName.replace(/\s+/g,'_')}.xlsx`);
+  showMsg('export-msg', 'success', '✓ Excel report downloaded.');
+}
+
+function exportCSV(type) {
+  if (!STATE.results) { showMsg('export-msg', 'error', 'Compute results first.'); return; }
+  const r = STATE.results;
+  let csv = '';
+  if (type === 'co') {
+    csv = 'CO,Description,Percentage,Level\n';
+    for (const co of STATE.cos) {
+      const a = r.coAttainment[co.id];
+      csv += `${co.id},"${co.description}",${a.percentage.toFixed(2)},${a.level}\n`;
+    }
+    downloadBlob(csv, 'CO_Attainment.csv', 'text/csv');
+  } else {
+    csv = 'PO,Description,Score,Percentage\n';
+    for (const po of STATE.pos) {
+      const a = r.poAttainment[po.id];
+      csv += `${po.id},"${po.description}",${a.totalWeight>0?a.score.toFixed(4):'N/A'},${a.totalWeight>0?a.percentage.toFixed(2):'N/A'}\n`;
+    }
+    downloadBlob(csv, 'PO_Attainment.csv', 'text/csv');
+  }
+  showMsg('export-msg', 'success', `✓ ${type.toUpperCase()} CSV downloaded.`);
+}
+
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadTemplate() {
+  if (!STATE.questions.length) { alert('Please define questions first.'); return; }
+  const headers = ['Student Name', ...STATE.questions.map(q => q.id)];
+  const sample = ['Student A', ...STATE.questions.map(q => Math.floor(Math.random() * q.maxMarks))];
+  const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Marks');
+  XLSX.writeFile(wb, 'OBE_Marks_Template.xlsx');
+}
+
+// ===== ========================== =====
+// ===== UTILITIES                  =====
+// ===== ========================== =====
+
+function showMsg(id, type, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const cls = { success: 'alert-success', error: 'alert-error', info: 'alert-info', warn: 'alert-warn' }[type];
+  el.innerHTML = `<div class="alert ${cls}">${text}</div>`;
+  if (type === 'success') setTimeout(() => { if(el) el.innerHTML = ''; }, 4000);
+}
+
+function updateBadge(key, text) {
+  const el = document.getElementById('badge-' + key);
+  if (!el) return;
+  el.textContent = text;
+  el.classList.remove('pending');
+}
+
+function resetAll() {
+  if (!confirm('Reset all data and restart? This cannot be undone.')) return;
+  location.reload();
+}
+
+// Weight total live feedback
+['w-internal','w-mid','w-end'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => {
+    const wi = parseFloat(document.getElementById('w-internal').value)||0;
+    const wm = parseFloat(document.getElementById('w-mid').value)||0;
+    const we = parseFloat(document.getElementById('w-end').value)||0;
+    const t = wi+wm+we;
+    const el = document.getElementById('weight-total-msg');
+    if (el) el.innerHTML = `<span style="font-family:var(--font-mono); font-size:12px; color:${Math.abs(t-100)<0.01?'var(--green)':'var(--amber)'}">Sum: ${t}%${Math.abs(t-100)<0.01?' ✓':' (must be 100%)'}</span>`;
+  });
+});
+
+// ===== OBE CHARTS ENGINE — NAAC/NBA =====
+const OBE_CHARTS = {};
+const BLOOM_ORDER = ['Remember','Understand','Apply','Analyse','Evaluate','Create'];
+const BLOOM_META = {
+  Remember:  {color:'rgba(248,81,73,0.75)',  border:'#f85149', bg:'rgba(248,81,73,0.12)'},
+  Understand:{color:'rgba(240,165,0,0.75)',  border:'#f0a500', bg:'rgba(240,165,0,0.12)'},
+  Apply:     {color:'rgba(63,185,80,0.75)',  border:'#3fb950', bg:'rgba(63,185,80,0.12)'},
+  Analyse:   {color:'rgba(88,166,255,0.75)', border:'#58a6ff', bg:'rgba(88,166,255,0.12)'},
+  Evaluate:  {color:'rgba(188,140,255,0.75)',border:'#bc8cff', bg:'rgba(188,140,255,0.12)'},
+  Create:    {color:'rgba(255,166,77,0.75)', border:'#ffa64d', bg:'rgba(255,166,77,0.12)'},
+};
+const DK = {
+  grid:'rgba(255,255,255,0.06)', tick:'#8b949e',
+  tt:'#1f2937', ttBorder:'#30363d',
+};
+function dC(id){if(OBE_CHARTS[id]){OBE_CHARTS[id].destroy();delete OBE_CHARTS[id];}}
+function bTT(){return{backgroundColor:DK.tt,titleColor:'#e6edf3',bodyColor:'#8b949e',borderColor:DK.ttBorder,borderWidth:1,padding:10,cornerRadius:6};}
+function bSY(max=100){return{beginAtZero:true,max,grid:{color:DK.grid},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},callback:v=>v+'%'},border:{color:'transparent'}};}
+function bSX(){return{grid:{display:false},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10}},border:{color:DK.grid}};}
+function lvlCol(p,T){return p>=T[3]?'#3fb950':p>=T[2]?'#58a6ff':p>=T[1]?'#f0a500':'#f85149';}
+function getBloom(co){const b=(STATE.cos.find(c=>c.id===co.id||c.id===co)?.bloom)||'Apply';return BLOOM_META[b]?b:'Apply';}
+
+function renderOBECharts(r){
+  if(!r)return;
+  document.getElementById('charts-placeholder').style.display='none';
+  document.getElementById('charts-content').style.display='block';
+  const T=STATE.thresholds;
+  const coIds=STATE.cos.map(c=>c.id);
+  const coPcts=STATE.cos.map(c=>+r.coAttainment[c.id].percentage.toFixed(2));
+  const coLvls=STATE.cos.map(c=>r.coAttainment[c.id].level);
+
+  // ① CDLL
+  {
+    dC('cdll-canvas');
+    const bCount={},bCOs={},bAtts={};
+    BLOOM_ORDER.forEach(b=>{bCount[b]=0;bCOs[b]=[];bAtts[b]=[];});
+    STATE.cos.forEach(co=>{const b=getBloom(co);bCount[b]++;bCOs[b].push(co.id);bAtts[b].push(r.coAttainment[co.id].percentage);});
+    const bAvg=BLOOM_ORDER.map(b=>bAtts[b].length?+(bAtts[b].reduce((a,v)=>a+v,0)/bAtts[b].length).toFixed(2):null);
+    const ctx=document.getElementById('cdll-canvas').getContext('2d');
+    OBE_CHARTS['cdll-canvas']=new Chart(ctx,{
+      data:{labels:BLOOM_ORDER.map((b,i)=>`L${i+1} ${b}`),datasets:[
+        {type:'bar',label:'No. of COs',data:BLOOM_ORDER.map(b=>bCount[b]),
+          backgroundColor:BLOOM_ORDER.map(b=>BLOOM_META[b].color),borderColor:BLOOM_ORDER.map(b=>BLOOM_META[b].border),
+          borderWidth:2,borderRadius:6,yAxisID:'yC',order:2},
+        {type:'line',label:'Avg Attainment %',data:bAvg,borderColor:'#f0a500',backgroundColor:'rgba(240,165,0,0.08)',
+          borderWidth:2.5,pointBackgroundColor:'#f0a500',pointRadius:6,tension:0.35,fill:false,yAxisID:'yP',order:1,spanGaps:true}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},boxWidth:10,padding:14}},
+          tooltip:{...bTT(),callbacks:{title:c=>c[0].label,afterBody:c=>{const b=BLOOM_ORDER[c[0].dataIndex];return bCOs[b].length?[`COs: ${bCOs[b].join(', ')}`]:[];}}},
+          annotation:{annotations:{tgt:{type:'line',yScaleID:'yP',yMin:T[2],yMax:T[2],borderColor:'rgba(240,165,0,0.4)',borderWidth:1,borderDash:[5,4],
+            label:{content:`Target ${T[2]}%`,display:true,position:'end',color:'#f0a500',font:{size:9,family:"'IBM Plex Mono'"}}}}},
+        },
+        scales:{x:{...bSX()},
+          yC:{type:'linear',position:'left',beginAtZero:true,max:Math.max(3,...BLOOM_ORDER.map(b=>bCount[b]))+1,
+            grid:{color:DK.grid},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},stepSize:1},border:{color:'transparent'},
+            title:{display:true,text:'No. of COs',color:DK.tick,font:{family:"'IBM Plex Mono'",size:9}}},
+          yP:{type:'linear',position:'right',beginAtZero:true,max:100,grid:{display:false},
+            ticks:{color:'#f0a500',font:{family:"'IBM Plex Mono'",size:10},callback:v=>v+'%'},border:{color:'transparent'},
+            title:{display:true,text:'Avg Attainment %',color:'#f0a500',font:{family:"'IBM Plex Mono'",size:9}}}
+        }
+      }
+    });
+    document.getElementById('bloom-strip').innerHTML=BLOOM_ORDER.map((b,i)=>{
+      const m=BLOOM_META[b];return `<div class="bloom-pill" style="background:${m.bg};border-color:${m.border};color:${m.border}">L${i+1} ${b}${bCOs[b].length?' — '+bCOs[b].join(', '):''}`;
+    }).join('');
+  }
+
+  // ② CDAL Radar
+  {
+    dC('cdal-radar');
+    const ctx=document.getElementById('cdal-radar').getContext('2d');
+    OBE_CHARTS['cdal-radar']=new Chart(ctx,{type:'radar',
+      data:{labels:coIds,datasets:[
+        {label:'CO Attainment %',data:coPcts,backgroundColor:'rgba(88,166,255,0.13)',borderColor:'#58a6ff',borderWidth:2.5,pointBackgroundColor:'#58a6ff',pointRadius:5},
+        {label:`Target (${T[2]}%)`,data:coIds.map(()=>T[2]),backgroundColor:'transparent',borderColor:'rgba(240,165,0,0.5)',borderWidth:1.5,borderDash:[5,4],pointRadius:0}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},boxWidth:10,padding:12}},tooltip:{...bTT(),callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.r}%`}}},
+        scales:{r:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.08)'},angleLines:{color:'rgba(255,255,255,0.06)'},
+          pointLabels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:11}},ticks:{color:DK.tick,backdropColor:'transparent',font:{size:9},callback:v=>v+'%'}}}
+      }
+    });
+  }
+
+  // ② CDAL Bloom
+  {
+    dC('cdal-bloom');
+    const bAvgD=BLOOM_ORDER.map(b=>{const vals=STATE.cos.filter(co=>getBloom(co)===b).map(co=>r.coAttainment[co.id].percentage);return vals.length?+(vals.reduce((a,v)=>a+v,0)/vals.length).toFixed(2):null;});
+    const ctx=document.getElementById('cdal-bloom').getContext('2d');
+    OBE_CHARTS['cdal-bloom']=new Chart(ctx,{type:'bar',
+      data:{labels:BLOOM_ORDER.map((b,i)=>`L${i+1} ${b}`),datasets:[{label:'Avg Attainment %',data:bAvgD,
+        backgroundColor:BLOOM_ORDER.map(b=>BLOOM_META[b].color),borderColor:BLOOM_ORDER.map(b=>BLOOM_META[b].border),borderWidth:2,borderRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...bTT(),callbacks:{label:c=>`Avg: ${c.parsed.y??'N/A'}%`,
+          afterLabel:c=>{const b=BLOOM_ORDER[c.dataIndex];return STATE.cos.filter(co=>getBloom(co)===b).map(co=>`  ${co.id}: ${r.coAttainment[co.id].percentage.toFixed(1)}%`);}}},
+          annotation:{annotations:{tgt:{type:'line',yMin:T[2],yMax:T[2],borderColor:'rgba(240,165,0,0.6)',borderWidth:1.5,borderDash:[5,4],
+            label:{content:`Target ${T[2]}%`,display:true,position:'end',color:'#f0a500',font:{size:9,family:"'IBM Plex Mono'"}}},
+            t3:{type:'line',yMin:T[3],yMax:T[3],borderColor:'rgba(63,185,80,0.35)',borderWidth:1,borderDash:[4,4]}}}},
+        scales:{x:{...bSX()},y:{...bSY()}}
+      }
+    });
+  }
+
+  // ③ COAL Grouped
+  {
+    dC('coal-grouped');
+    const bt=(id,type)=>{const v=r.coByTypeClass[id]?.[type];return(v!==null&&v!==undefined)?+(v*100).toFixed(2):null;};
+    const ctx=document.getElementById('coal-grouped').getContext('2d');
+    OBE_CHARTS['coal-grouped']=new Chart(ctx,{type:'bar',
+      data:{labels:coIds,datasets:[
+        {label:'Internal',data:coIds.map(id=>bt(id,'Internal')),backgroundColor:'rgba(188,140,255,0.6)',borderColor:'#bc8cff',borderWidth:1.5,borderRadius:4},
+        {label:'Mid-Sem', data:coIds.map(id=>bt(id,'Mid')),    backgroundColor:'rgba(88,166,255,0.6)', borderColor:'#58a6ff',borderWidth:1.5,borderRadius:4},
+        {label:'End-Sem', data:coIds.map(id=>bt(id,'End')),    backgroundColor:'rgba(63,185,80,0.6)',  borderColor:'#3fb950',borderWidth:1.5,borderRadius:4},
+        {label:'Final (Weighted)',data:coPcts,                  backgroundColor:'rgba(240,165,0,0.8)', borderColor:'#f0a500',borderWidth:2,  borderRadius:4},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},boxWidth:10,padding:12}},
+          tooltip:{...bTT(),callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y??'N/A'}%`}},
+          annotation:{annotations:{
+            l3:{type:'line',yMin:T[3],yMax:T[3],borderColor:'rgba(63,185,80,0.5)',borderWidth:1.2,borderDash:[5,4],label:{content:`L3 ≥${T[3]}%`,display:true,position:'start',color:'#3fb950',backgroundColor:'rgba(63,185,80,0.1)',font:{size:9,family:"'IBM Plex Mono'"}}},
+            l2:{type:'line',yMin:T[2],yMax:T[2],borderColor:'rgba(88,166,255,0.5)',borderWidth:1.2,borderDash:[5,4],label:{content:`L2 ≥${T[2]}%`,display:true,position:'start',color:'#58a6ff',backgroundColor:'rgba(88,166,255,0.1)',font:{size:9,family:"'IBM Plex Mono'"}}},
+            l1:{type:'line',yMin:T[1],yMax:T[1],borderColor:'rgba(240,165,0,0.5)',borderWidth:1.2,borderDash:[5,4],label:{content:`L1 ≥${T[1]}%`,display:true,position:'start',color:'#f0a500',backgroundColor:'rgba(240,165,0,0.1)',font:{size:9,family:"'IBM Plex Mono'"}}}
+          }}},
+        scales:{x:{...bSX()},y:{...bSY()}}
+      }
+    });
+    document.getElementById('coal-legend').innerHTML=[
+      {col:'#3fb950',bg:'rgba(63,185,80,0.12)',l:`Level 3 ≥${T[3]}% — High`},
+      {col:'#58a6ff',bg:'rgba(88,166,255,0.12)',l:`Level 2 ≥${T[2]}% — Medium`},
+      {col:'#f0a500',bg:'rgba(240,165,0,0.12)',l:`Level 1 ≥${T[1]}% — Low`},
+      {col:'#f85149',bg:'rgba(248,81,73,0.12)',l:`Level 0 <${T[1]}% — Below Target`},
+    ].map(it=>`<div class="ll-item" style="background:${it.bg};border:1px solid ${it.col};color:${it.col}">${it.l}</div>`).join('');
+  }
+
+  // ③ COAL Horizontal
+  {
+    dC('coal-hbar');
+    const cols=coPcts.map(p=>lvlCol(p,T));
+    const ctx=document.getElementById('coal-hbar').getContext('2d');
+    OBE_CHARTS['coal-hbar']=new Chart(ctx,{type:'bar',
+      data:{labels:STATE.cos.map(co=>{const d=co.description;return co.id+(d?` — ${d.length>20?d.substring(0,20)+'…':d}`:'')}),
+        datasets:[{label:'Final Attainment %',data:coPcts,backgroundColor:cols.map(c=>c+'55'),borderColor:cols,borderWidth:2,borderRadius:5}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...bTT(),callbacks:{label:c=>`Attainment: ${c.parsed.x}%`,afterLabel:c=>[`Level: ${coLvls[c.dataIndex]}`]}},
+          annotation:{annotations:{
+            l3:{type:'line',xMin:T[3],xMax:T[3],borderColor:'rgba(63,185,80,0.5)',borderWidth:1.5,borderDash:[5,4],label:{content:`L3 ${T[3]}%`,display:true,position:'start',color:'#3fb950',font:{size:9,family:"'IBM Plex Mono'"}}},
+            l2:{type:'line',xMin:T[2],xMax:T[2],borderColor:'rgba(88,166,255,0.5)',borderWidth:1.5,borderDash:[5,4],label:{content:`L2 ${T[2]}%`,display:true,position:'start',color:'#58a6ff',font:{size:9,family:"'IBM Plex Mono'"}}},
+            l1:{type:'line',xMin:T[1],xMax:T[1],borderColor:'rgba(240,165,0,0.5)',borderWidth:1.5,borderDash:[5,4],label:{content:`L1 ${T[1]}%`,display:true,position:'start',color:'#f0a500',font:{size:9,family:"'IBM Plex Mono'"}}}
+          }}},
+        scales:{
+          x:{beginAtZero:true,max:100,grid:{color:DK.grid},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},callback:v=>v+'%'},border:{color:'transparent'}},
+          y:{grid:{display:false},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10}},border:{color:DK.grid}}
+        }
+      }
+    });
+  }
+
+  // ③ COAL Student Distribution
+  {
+    dC('coal-studist');
+    const dist={};STATE.cos.forEach(co=>{dist[co.id]={L3:0,L2:0,L1:0,L0:0};});
+    r.studentCOFinal.forEach(s=>{STATE.cos.forEach(co=>{const p=(s.coScores[co.id]||0)*100;if(p>=T[3])dist[co.id].L3++;else if(p>=T[2])dist[co.id].L2++;else if(p>=T[1])dist[co.id].L1++;else dist[co.id].L0++;});});
+    const tot=r.studentCOFinal.length||1;
+    const ctx=document.getElementById('coal-studist').getContext('2d');
+    OBE_CHARTS['coal-studist']=new Chart(ctx,{type:'bar',
+      data:{labels:coIds,datasets:[
+        {label:`L3 ≥${T[3]}%`,data:coIds.map(id=>dist[id].L3),backgroundColor:'rgba(63,185,80,0.8)', borderColor:'#3fb950',borderWidth:1.5,borderRadius:4,stack:'s'},
+        {label:`L2 ≥${T[2]}%`,data:coIds.map(id=>dist[id].L2),backgroundColor:'rgba(88,166,255,0.8)',borderColor:'#58a6ff',borderWidth:1.5,borderRadius:0,stack:'s'},
+        {label:`L1 ≥${T[1]}%`,data:coIds.map(id=>dist[id].L1),backgroundColor:'rgba(240,165,0,0.8)', borderColor:'#f0a500',borderWidth:1.5,borderRadius:0,stack:'s'},
+        {label:'L0 Below',    data:coIds.map(id=>dist[id].L0),backgroundColor:'rgba(248,81,73,0.7)',  borderColor:'#f85149',borderWidth:1.5,borderRadius:0,stack:'s'},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,position:'bottom',labels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:9},boxWidth:8,padding:10}},
+          tooltip:{...bTT(),callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y} students`}}},
+        scales:{x:{...bSX(),stacked:true},y:{...bSY(tot+5),stacked:true,ticks:{...bSY().ticks,callback:v=>v+' stu'},title:{display:true,text:'Students',color:DK.tick,font:{family:"'IBM Plex Mono'",size:9}}}}
+      }
+    });
+  }
+
+  // ③ CO Gauges + bar
+  {
+    const lCol={3:'#3fb950',2:'#58a6ff',1:'#f0a500',0:'#f85149'};
+    const lLbl={3:'Level 3',2:'Level 2',1:'Level 1',0:'Level 0'};
+    document.getElementById('co-gauges').innerHTML=STATE.cos.map(co=>{
+      const a=r.coAttainment[co.id];const pct=+a.percentage.toFixed(1);const col=lCol[a.level];
+      const R=32,cx=38,cy=38,circ=2*Math.PI*R,dash=circ*(pct/100);
+      return `<div class="gauge-item"><div class="g-co">${co.id}</div>
+        <div class="gauge-ring"><svg width="76" height="76" viewBox="0 0 76 76">
+          <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#1f2937" stroke-width="7"/>
+          <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${col}" stroke-width="7"
+            stroke-dasharray="${dash} ${circ}" stroke-linecap="round" style="transition:stroke-dasharray .8s ease"/></svg>
+          <div class="g-val" style="color:${col}">${pct}%</div></div>
+        <div class="g-level" style="color:${col}">${lLbl[a.level]}</div></div>`;
+    }).join('');
+    dC('coal-bar');
+    const ctx=document.getElementById('coal-bar').getContext('2d');
+    OBE_CHARTS['coal-bar']=new Chart(ctx,{type:'bar',
+      data:{labels:coIds,datasets:[{label:'Final Attainment %',data:coPcts,
+        backgroundColor:coLvls.map(l=>lCol[l]+'44'),borderColor:coLvls.map(l=>lCol[l]),borderWidth:2,borderRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...bTT(),callbacks:{label:c=>`Attainment: ${c.parsed.y}%`,afterLabel:c=>[`Level: ${coLvls[c.dataIndex]}`]}},
+          annotation:{annotations:{
+            l3:{type:'line',yMin:T[3],yMax:T[3],borderColor:'rgba(63,185,80,0.4)',borderWidth:1,borderDash:[4,4]},
+            l2:{type:'line',yMin:T[2],yMax:T[2],borderColor:'rgba(88,166,255,0.4)',borderWidth:1,borderDash:[4,4]},
+            l1:{type:'line',yMin:T[1],yMax:T[1],borderColor:'rgba(240,165,0,0.4)',borderWidth:1,borderDash:[4,4]}
+          }}},
+        scales:{x:{...bSX()},y:{...bSY()}}
+      }
+    });
+  }
+
+  // ④ CO-PO Heatmap (raw canvas)
+  {
+    renderHeatmap();
+  }
+
+  // ④ PO Horizontal
+  {
+    dC('po-hbar');
+    const poAct=STATE.pos.filter(p=>r.poAttainment[p.id].totalWeight>0);
+    const poL=poAct.map(p=>p.id),poP=poAct.map(p=>+r.poAttainment[p.id].percentage.toFixed(2));
+    const poC=poP.map(v=>lvlCol(v,T));
+    const ctx=document.getElementById('po-hbar').getContext('2d');
+    OBE_CHARTS['po-hbar']=new Chart(ctx,{type:'bar',
+      data:{labels:poL,datasets:[{label:'PO Attainment %',data:poP,backgroundColor:poC.map(c=>c+'44'),borderColor:poC,borderWidth:2,borderRadius:4}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...bTT(),callbacks:{label:c=>`PO Attainment: ${c.parsed.x}%`,afterLabel:c=>{const po=poAct[c.dataIndex];return po?[`Mapped: ${r.poAttainment[po.id].mappedCOs.join(', ')}`]:[];}}},
+          annotation:{annotations:{
+            l3:{type:'line',xMin:T[3],xMax:T[3],borderColor:'rgba(63,185,80,0.45)',borderWidth:1.5,borderDash:[4,4],label:{content:`L3 ${T[3]}%`,display:true,position:'start',color:'#3fb950',font:{size:9,family:"'IBM Plex Mono'"}}},
+            l2:{type:'line',xMin:T[2],xMax:T[2],borderColor:'rgba(88,166,255,0.45)',borderWidth:1.5,borderDash:[4,4],label:{content:`L2 ${T[2]}%`,display:true,position:'start',color:'#58a6ff',font:{size:9,family:"'IBM Plex Mono'"}}}
+          }}},
+        scales:{
+          x:{beginAtZero:true,max:100,grid:{color:DK.grid},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},callback:v=>v+'%'},border:{color:'transparent'}},
+          y:{grid:{display:false},ticks:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10}},border:{color:DK.grid}}
+        }
+      }
+    });
+  }
+
+  // ④ PO Radar
+  {
+    dC('po-radar');
+    const poAct=STATE.pos.filter(p=>r.poAttainment[p.id].totalWeight>0);
+    const poL=poAct.map(p=>p.id),poP=poAct.map(p=>+r.poAttainment[p.id].percentage.toFixed(2));
+    const ctx=document.getElementById('po-radar').getContext('2d');
+    OBE_CHARTS['po-radar']=new Chart(ctx,{type:'radar',
+      data:{labels:poL,datasets:[
+        {label:'PO Attainment %',data:poP,backgroundColor:'rgba(63,185,80,0.12)',borderColor:'#3fb950',borderWidth:2.5,pointBackgroundColor:'#3fb950',pointRadius:4},
+        {label:`Target (${T[2]}%)`,data:poL.map(()=>T[2]),backgroundColor:'transparent',borderColor:'rgba(240,165,0,0.5)',borderWidth:1.5,borderDash:[5,4],pointRadius:0}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10},boxWidth:10,padding:12}},tooltip:{...bTT(),callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.r}%`}}},
+        scales:{r:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.07)'},angleLines:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:DK.tick,font:{family:"'IBM Plex Mono'",size:10}},ticks:{color:DK.tick,backdropColor:'transparent',font:{size:9},callback:v=>v+'%'}}}
+      }
+    });
+  }
+
+  // Insight strip
+  {
+    const avgCO=(coPcts.reduce((a,b)=>a+b,0)/coPcts.length).toFixed(1);
+    const poAct=STATE.pos.filter(p=>r.poAttainment[p.id].totalWeight>0);
+    const poPs=poAct.map(p=>r.poAttainment[p.id].percentage);
+    const avgPO=poPs.length?(poPs.reduce((a,b)=>a+b,0)/poPs.length).toFixed(1):'N/A';
+    const l3=STATE.cos.filter(co=>r.coAttainment[co.id].level===3).map(c=>c.id);
+    const l0=STATE.cos.filter(co=>r.coAttainment[co.id].level===0).map(c=>c.id);
+    const poMet=poAct.filter(p=>r.poAttainment[p.id].percentage>=T[2]).map(p=>p.id);
+    document.getElementById('ins-co').innerHTML=`Avg CO attainment: <strong style="color:var(--amber)">${avgCO}%</strong><br>${l3.length?`Level 3 COs: <strong style="color:var(--green)">${l3.join(', ')}</strong><br>`:''}${l0.length?`Need attention (L0): <strong style="color:var(--red)">${l0.join(', ')}</strong>`:'All COs above Level 0 ✓'}`;
+    document.getElementById('ins-po').innerHTML=`Avg PO attainment: <strong style="color:var(--green)">${avgPO}%</strong><br>POs meeting target (≥${T[2]}%): <strong style="color:var(--green)">${poMet.length?poMet.join(', '):'None'}</strong><br>POs below target: <strong style="color:var(--amber)">${poAct.filter(p=>r.poAttainment[p.id].percentage<T[2]).map(p=>p.id).join(', ')||'None'}</strong>`;
+    document.getElementById('insight-box').style.display='grid';
+  }
+}
+
+function renderHeatmap(){
+  const cvs=document.getElementById('copo-heatmap');if(!cvs||!STATE.cos.length||!STATE.pos.length)return;
+  const ctx=cvs.getContext('2d');
+  const cW=Math.max(40,Math.min(68,Math.floor((window.innerWidth-340)/Math.max(STATE.pos.length,1))));
+  const cH=38,lP=58,tP=34;
+  cvs.width=lP+cW*STATE.pos.length+2;cvs.height=tP+cH*STATE.cos.length+2;
+  cvs.style.minWidth=cvs.width+'px';
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,cvs.width,cvs.height);
+  const sFill=['rgba(255,255,255,0.03)','rgba(88,166,255,0.22)','rgba(88,166,255,0.52)','rgba(88,166,255,0.87)'];
+  const sStr=['#30363d','rgba(88,166,255,0.4)','#58a6ff','#58a6ff'];
+  const sTxt=['—','1','2','3'];const sTCol=['#404854','#58a6ff','#e6edf3','#fff'];
+  ctx.font='bold 10px IBM Plex Mono,monospace';ctx.textAlign='center';ctx.fillStyle='#8b949e';
+  STATE.pos.forEach((po,pi)=>ctx.fillText(po.id,lP+pi*cW+cW/2,tP-8));
+  STATE.cos.forEach((co,ci)=>{
+    ctx.font='bold 11px IBM Plex Mono,monospace';ctx.textAlign='right';ctx.fillStyle='#f0a500';
+    ctx.fillText(co.id,lP-8,tP+ci*cH+cH/2+4);
+    STATE.pos.forEach((po,pi)=>{
+      const v=STATE.copoMatrix[co.id]?.[po.id]??0;
+      const x=lP+pi*cW,y=tP+ci*cH,p=3;
+      ctx.fillStyle=sFill[v];ctx.strokeStyle=sStr[v];ctx.lineWidth=1;
+      ctx.beginPath();
+      const r=4,bx=x+p,by=y+p,bw=cW-p*2,bh=cH-p*2;
+      ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.arcTo(bx+bw,by,bx+bw,by+r,r);
+      ctx.lineTo(bx+bw,by+bh-r);ctx.arcTo(bx+bw,by+bh,bx+bw-r,by+bh,r);
+      ctx.lineTo(bx+r,by+bh);ctx.arcTo(bx,by+bh,bx,by+bh-r,r);
+      ctx.lineTo(bx,by+r);ctx.arcTo(bx,by,bx+r,by,r);ctx.closePath();
+      ctx.fill();ctx.stroke();
+      ctx.font=`bold ${v===3?13:11}px IBM Plex Mono,monospace`;ctx.fillStyle=sTCol[v];ctx.textAlign='center';
+      ctx.fillText(sTxt[v],x+cW/2,y+cH/2+4);
+    });
+  });
+}
+
+function dlChart(id,name){
+  const cvs=document.getElementById(id);if(!cvs){alert('Navigate to OBE Charts tab first.');return;}
+  const off=document.createElement('canvas');off.width=cvs.width;off.height=cvs.height;
+  const c=off.getContext('2d');c.fillStyle='#0d1117';c.fillRect(0,0,off.width,off.height);c.drawImage(cvs,0,0);
+  const a=document.createElement('a');a.download=`OBE_${name}.png`;a.href=off.toDataURL('image/png');a.click();
+}
+function dlHeatmap(){renderHeatmap();setTimeout(()=>dlChart('copo-heatmap','COPO_Heatmap'),100);}
+async function downloadAllCharts(){
+  if(!STATE.results){alert('Compute results first.');return;}
+  renderOBECharts(STATE.results);await new Promise(r=>setTimeout(r,600));
+  for(const[id,nm]of[['cdll-canvas','CDLL'],['cdal-radar','CDAL_Radar'],['cdal-bloom','CDAL_Bloom'],['coal-grouped','COAL_Grouped'],['coal-hbar','COAL_Horizontal'],['coal-studist','COAL_Student_Dist'],['coal-bar','COAL_Bar'],['po-hbar','PO_Horizontal'],['po-radar','PO_Radar']]){
+    await new Promise(r=>setTimeout(r,110));dlChart(id,nm);
+  }
+  dlHeatmap();
+}
+function toggleRef(){
+  const b=document.getElementById('ref-body'),t=document.getElementById('ref-tog');
+  b.classList.toggle('open');t.textContent=b.classList.contains('open')?'▲':'▼';
+}
+
+// Init topbar section label
+document.getElementById('topbar-section').textContent = 'Course Setup';
+</script>
+</body>
+</html>
